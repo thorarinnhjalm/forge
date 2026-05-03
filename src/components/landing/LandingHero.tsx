@@ -2,6 +2,7 @@
 
 import { useRouter, useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
+import Logo from "@/components/shared/Logo";
 
 interface LandingHeroProps {
   title: string;
@@ -149,7 +150,7 @@ export default function LandingHero({ title, description, ctaText }: LandingHero
       <footer className="landing-footer">
         <div className="footer-content">
           <div className="footer-brand">
-            <h3>Forge</h3>
+            <Logo />
             <p>{title}</p>
           </div>
           <div className="footer-links">
@@ -406,14 +407,17 @@ export default function LandingHero({ title, description, ctaText }: LandingHero
           gap: var(--space-6);
           margin-bottom: var(--space-8);
         }
-        .footer-brand h3 {
-          font-size: 1.5rem;
-          color: var(--color-accent);
-          margin-bottom: var(--space-2);
+        .footer-brand {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: var(--space-2);
         }
         .footer-brand p {
           color: var(--color-text-secondary);
           font-size: 0.9rem;
+          max-width: 300px;
+          margin-top: var(--space-2);
         }
         .footer-links {
           display: flex;

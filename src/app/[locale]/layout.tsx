@@ -18,8 +18,8 @@ const outfit = Outfit({
 });
 
 export const metadata: Metadata = {
-  title: "Forge | Algorithmic Education",
-  description: "Learn to code by building real apps with AI.",
+  title: "Forge AI | tryforge.tech",
+  description: "Byggðu vefkerfi með hjálp gervigreindar á örfáum mínútum.",
 };
 
 import {NextIntlClientProvider} from 'next-intl';
