@@ -135,6 +135,14 @@ export default function LandingHero({ title, description, ctaText }: LandingHero
             <h4>{tFaq("q4")}</h4>
             <p>{tFaq("a4")}</p>
           </div>
+          <div className="faq-item">
+            <h4>{tFaq("q5")}</h4>
+            <p>{tFaq("a5")}</p>
+          </div>
+          <div className="faq-item">
+            <h4>{tFaq("q6")}</h4>
+            <p>{tFaq("a6")}</p>
+          </div>
         </div>
       </div>
 

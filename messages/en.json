@@ -123,6 +123,10 @@
     "q3": "How does pricing work?",
     "a3": "You only pay for what you use with our credit system. Trial is free, but deploying large web systems may require a Pro plan.",
     "q4": "Can anyone see my web system?",
-    "a4": "Yes, when you click 'Deploy', your project connects to Vercel and goes live on a public URL in seconds."
+    "a4": "Yes, when you click 'Deploy', your project connects to Vercel and goes live on a public URL in seconds.",
+    "q5": "How does the deployment process work?",
+    "a5": "To put your web system live, you will need a free GitHub account (to store your code) and a free Vercel account (for hosting). Forge automatically connects these two platforms so your site is always safely stored on your own accounts and ready for the world.",
+    "q6": "Does it cost anything to host the web system?",
+    "a6": "Hosting on Vercel is usually free for beginners and smaller sites (Hobby plan). If you want a custom domain (e.g. .com or .is), you can purchase it through domain registrars or directly through Vercel, which typically costs around $10 to $20 per year."
   }
 }

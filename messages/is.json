@@ -123,6 +123,10 @@
     "q3": "Hvernig virkar einingakerfið?",
     "a3": "Þú notar einingar (Credits) fyrir hverja aðgerð. Að spjalla eða biðja um útskýringar kostar lítið, en að smíða flókinn kóða kostar meira. Þannig borgarðu aðeins fyrir nákvæmlega það sem þú notar.",
     "q4": "Get ég gefið út kerfið mitt á eigin léni?",
-    "a4": "Já, þegar þú smellir á 'Gefa út' fer verkefnið þitt sjálfkrafa yfir á Vercel þar sem þú getur sett inn þitt eigið lén (Custom Domain) á nokkrum mínútum."
+    "a4": "Já, þegar þú smellir á 'Gefa út' fer verkefnið þitt sjálfkrafa yfir á Vercel þar sem þú getur sett inn þitt eigið lén (Custom Domain) á nokkrum mínútum.",
+    "q5": "Hvernig virkar útgáfuferlið nákvæmlega?",
+    "a5": "Til að koma vefnum þínum í loftið þarftu ókeypis aðgang að Github (fyrir kóðageymslu) og Vercel (fyrir hýsingu). Forge tengir þessi tvö kerfi sjálfkrafa saman svo vefurinn þinn sé alltaf öruggur á þínu eigin svæði og tilbúinn fyrir heiminn.",
+    "q6": "Kostar eitthvað að hýsa vefkerfið?",
+    "a6": "Hýsing á Vercel er venjulega ókeypis fyrir byrjendur og smærri vefi (Hobby pakki). Ef þú vilt þitt eigið lén (t.d. .is eða .com) þá kaupir þú það hjá aðilum eins og ISNIC eða beint í gegnum Vercel, sem kostar oftast í kringum 5.000 til 10.000 kr. á ári."
   }
 }
