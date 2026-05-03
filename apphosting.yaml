@@ -1,0 +1,15 @@
+# Firebase App Hosting configuration
+# https://firebase.google.com/docs/app-hosting/configure
+
+# Options for the Cloud Run service that runs the SSR app
+runConfig:
+  cpu: 1
+  memoryMiB: 1024
+  concurrency: 80
+  minInstances: 0
+  maxInstances: 100
+
+# Environment variables
+env:
+  # Secrets will be managed in Google Cloud Secret Manager
+  # and injected via the Firebase Console / App Hosting UI

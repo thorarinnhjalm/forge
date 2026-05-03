@@ -1,0 +1,128 @@
+{
+  "LandingPage": {
+    "title": "Stop dreaming, start building",
+    "description": "Forge turns your ideas into real web systems in minutes – no coding experience required.",
+    "cta": "Join the Waitlist"
+  },
+  "Auth": {
+    "signIn": "Sign in to Forge",
+    "signInDesc": "Use your Google account to start building.",
+    "continueWithGoogle": "Continue with Google",
+    "loading": "Loading..."
+  },
+  "Onboarding": {
+    "techLevelTitle": "What is your programming experience?",
+    "techLevelDesc": "This helps us adjust how much we explain to you.",
+    "level_beginner": "Beginner",
+    "level_beginner_desc": "I have never coded before, or very little.",
+    "level_intermediate": "Some experience",
+    "level_intermediate_desc": "I know basic concepts like HTML or variables.",
+    "level_comfortable": "Fast learner",
+    "level_comfortable_desc": "I have used programming languages before, explain it quickly.",
+    "projectTitle": "What do you want to build?",
+    "projectDesc": "Select one of the starter projects to learn Forge.",
+    "back": "Back",
+    "startBuilding": "Start building",
+    "loading": "Preparing...",
+    "diff_easy": "Easy",
+    "diff_medium": "Medium",
+    "diff_hard": "Hard"
+  },
+  "Session": {
+    "step": "Step",
+    "of": "of",
+    "why": "Why?",
+    "askForge": "Ask Forge a question...",
+    "send": "Send",
+    "terminal": "Terminal",
+    "appPreview": "Your Web System Preview"
+  },
+  "Deploy": {
+    "deployNow": "Deploy Now",
+    "deploying": "Deploying...",
+    "success": "Your web system is live!"
+  },
+  "Dashboard": {
+    "myProjects": "My Projects",
+    "settings": "Settings",
+    "creditsRemaining": "Credits Remaining",
+    "welcome": "Welcome back!",
+    "newProject": "New Project",
+    "status_deployed": "Live",
+    "status_building": "Building",
+    "viewLive": "View Live",
+    "continueBuilding": "Continue"
+  },
+  "Summary": {
+    "title": "Great job!",
+    "subtitle": "You completed this step. Here's what you learned:",
+    "conceptsLearned": "Concepts",
+    "toDashboard": "Back to Dashboard",
+    "continueProject": "Continue Building"
+  },
+  "Settings": {
+    "myProjects": "My Projects",
+    "settings": "Settings",
+    "preferences": "Preferences",
+    "language": "Language",
+    "techLevel": "Programming Experience",
+    "level_beginner": "Beginner",
+    "level_intermediate": "Some Experience",
+    "level_comfortable": "Fast Learner",
+    "account": "Account",
+    "signOut": "Sign Out"
+  },
+  "Features": {
+    "feature1_title": "AI Writes the Code",
+    "feature1_desc": "You say what you want, and the AI writes the code step by step.",
+    "feature2_title": "Learn as You Build",
+    "feature2_desc": "Forge explains the code in plain English so you understand how your web system works.",
+    "feature3_title": "Deploy Instantly",
+    "feature3_desc": "See the results immediately and share your web system with friends or customers."
+  },
+  "HowItWorks": {
+    "title": "How Forge Works",
+    "step1_title": "1. Talk to the AI",
+    "step1_desc": "Forge starts by asking you about your project and explains the technology we'll use in the first step.",
+    "step2_title": "2. Code Generation",
+    "step2_desc": "The AI writes precise code and builds your interface in real-time. You watch it happen.",
+    "step3_title": "3. Understand What Happened",
+    "step3_desc": "Instead of just giving you the final result, Forge breaks down the code and explains exactly how everything fits together."
+  },
+  "Navigation": {
+    "features": "Features",
+    "pricing": "Pricing",
+    "faq": "FAQ",
+    "signIn": "Sign In",
+    "startBuilding": "Join the Waitlist"
+  },
+  "Pricing": {
+    "title": "Simple Pricing & Credits",
+    "subtitle": "Forge uses a flexible Credit system. Standard chats and explanations cost 1 credit, while complex code generation requires more. This ensures you always get maximum performance at a fair price.",
+    "free_title": "Trial",
+    "free_price": "$0",
+    "free_feature1": "500 Credits to start",
+    "free_feature2": "Access to starter projects",
+    "free_feature3": "Preview web systems instantly",
+    "free_cta": "Join the waitlist",
+    "pro_title": "Forge Pro",
+    "pro_price": "$19",
+    "pro_period": "/ mo",
+    "pro_feature1": "5,000 Credits per month",
+    "pro_feature2": "Build your own web systems from scratch",
+    "pro_feature3": "Deploy to a custom domain",
+    "pro_cta": "Join Waitlist",
+    "recommended": "Recommended"
+  },
+  "FAQ": {
+    "title": "Frequently Asked Questions",
+    "q1": "Do I need to know how to code?",
+    "a1": "No, Forge takes care of that for you and teaches you along the way.",
+    "q2": "What happens if I get stuck?",
+    "a2": "Our AI explains exactly what it's doing in plain English. If you don't understand, you can click the 'Why?' button.",
+    "q3": "How does pricing work?",
+    "a3": "You only pay for what you use with our credit system. Trial is free, but deploying large web systems may require a Pro plan.",
+    "q4": "Can anyone see my web system?",
+    "a4": "Yes, when you click 'Deploy', your project connects to Vercel and goes live on a public URL in seconds."
+  }
+}

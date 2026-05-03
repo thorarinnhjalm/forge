@@ -1,0 +1,128 @@
+{
+  "LandingPage": {
+    "title": "Hættu að dreyma, byrjaðu að smíða",
+    "description": "Forge er tækið sem breytir hugmyndum þínum í raunveruleg vefkerfi á nokkrum mínútum – án þess að þú þurfir að kunna að forrita.",
+    "cta": "Skrá á biðlista"
+  },
+  "Auth": {
+    "signIn": "Skrá inn á Forge",
+    "signInDesc": "Notaðu Google reikninginn þinn til að byrja að smíða.",
+    "continueWithGoogle": "Halda áfram með Google",
+    "loading": "Hleður..."
+  },
+  "Onboarding": {
+    "techLevelTitle": "Hver er þín reynsla af forritun?",
+    "techLevelDesc": "Þetta hjálpar okkur að aðlaga hversu mikið við útskýrum fyrir þér.",
+    "level_beginner": "Byrjandi",
+    "level_beginner_desc": "Ég hef aldrei forritað áður eða mjög lítið.",
+    "level_intermediate": "Hef smá reynslu",
+    "level_intermediate_desc": "Ég þekki hugtök eins og HTML eða breytur.",
+    "level_comfortable": "Læri hratt",
+    "level_comfortable_desc": "Hef notað forritunarmál áður, útskýrðu þetta hratt.",
+    "projectTitle": "Hvað viltu byggja?",
+    "projectDesc": "Veldu eitt af byrjendaverkefnunum til að læra á Forge.",
+    "back": "Til baka",
+    "startBuilding": "Byrja að smíða",
+    "loading": "Undirbýr...",
+    "diff_easy": "Auðvelt",
+    "diff_medium": "Miðlungs",
+    "diff_hard": "Erfitt"
+  },
+  "Session": {
+    "step": "Skref",
+    "of": "af",
+    "why": "Af hverju?",
+    "askForge": "Spyrðu Forge spurningar...",
+    "send": "Senda",
+    "terminal": "Skjál",
+    "appPreview": "Forskoðun vefkerfisins"
+  },
+  "Deploy": {
+    "deployNow": "Gefa út",
+    "deploying": "Vinn við útgáfu...",
+    "success": "Vefkerfið þitt er komið í loftið!"
+  },
+  "Dashboard": {
+    "myProjects": "Mín Verkefni",
+    "settings": "Stillingar",
+    "creditsRemaining": "Einingar Eftir",
+    "welcome": "Velkominn aftur!",
+    "newProject": "Nýtt Verkefni",
+    "status_deployed": "Í loftinu",
+    "status_building": "Í vinnslu",
+    "viewLive": "Skoða í loftinu",
+    "continueBuilding": "Halda áfram"
+  },
+  "Summary": {
+    "title": "Frábært vel gert!",
+    "subtitle": "Þú kláraðir þetta skref. Hér er það sem þú lærðir:",
+    "conceptsLearned": "Hugtök",
+    "toDashboard": "Aftur á mælaborð",
+    "continueProject": "Halda áfram"
+  },
+  "Settings": {
+    "myProjects": "Mín Verkefni",
+    "settings": "Stillingar",
+    "preferences": "Stillingar",
+    "language": "Tungumál",
+    "techLevel": "Reynsla af forritun",
+    "level_beginner": "Byrjandi",
+    "level_intermediate": "Smá reynsla",
+    "level_comfortable": "Læri hratt",
+    "account": "Aðgangur",
+    "signOut": "Skrá út"
+  },
+  "Features": {
+    "feature1_title": "Gervigreindin Forritar",
+    "feature1_desc": "Þú segir hvað þú vilt gera og gervigreindin skrifar kóðann, skref fyrir skref.",
+    "feature2_title": "Lærðu um leið",
+    "feature2_desc": "Forge útskýrir kóðann á mannamáli þannig að þú skiljir hvernig vefkerfið þitt virkar.",
+    "feature3_title": "Beint í Loftið",
+    "feature3_desc": "Sjáðu afraksturinn um leið og deildu kerfinu þínu með vinum eða viðskiptavinum."
+  },
+  "HowItWorks": {
+    "title": "Hvernig Forge Virkar",
+    "step1_title": "1. Ræddu við Gervigreindina",
+    "step1_desc": "Forge byrjar á því að spyrja þig út í verkefnið og útskýrir hvaða tækni við ætlum að nota í fyrsta skrefinu.",
+    "step2_title": "2. Kóðinn Búinn Til",
+    "step2_desc": "Gervigreindin skrifar nákvæman kóða og byggir viðmótið þitt á rauntíma. Þú sérð hlutina gerast.",
+    "step3_title": "3. Skildu Hvað Gerðist",
+    "step3_desc": "Í stað þess að fá bara lokaútkomuna, brýtur Forge niður kóðann og útskýrir nákvæmlega hvernig allt hangir saman."
+  },
+  "Navigation": {
+    "features": "Eiginleikar",
+    "pricing": "Verðskrá",
+    "faq": "Spurningar",
+    "signIn": "Skrá inn",
+    "startBuilding": "Skrá á biðlista"
+  },
+  "Pricing": {
+    "title": "Einfalt Verðlag & Einingakerfi",
+    "subtitle": "Forge notar einingakerfi (Credits). Venjulegt spjall og útskýringar kosta 1 einingu, en flókin kóðasmíð sem krefst djúprar rökhugsunar kostar fleiri. Þannig færðu alltaf hámarks afköst á réttu verði.",
+    "free_title": "Prufuaðgangur",
+    "free_price": "0 kr",
+    "free_feature1": "500 Einingar til að byrja",
+    "free_feature2": "Aðgangur að byrjendaverkefnum",
+    "free_feature3": "Sjáðu afraksturinn strax",
+    "free_cta": "Skrá á biðlista",
+    "pro_title": "Forge Pro",
+    "pro_price": "2.900 kr",
+    "pro_period": "/ mán",
+    "pro_feature1": "5.000 Einingar í mánuði",
+    "pro_feature2": "Smíðaðu þín eigin verkefni frá grunni",
+    "pro_feature3": "Gefðu út á þitt eigið lén",
+    "pro_cta": "Skrá á biðlista",
+    "recommended": "Mælt með"
+  },
+  "FAQ": {
+    "title": "Algengar Spurningar",
+    "q1": "Þarf ég að kunna að forrita?",
+    "a1": "Nei, Forge sér um það fyrir þig og kennir þér um leið.",
+    "q2": "Hvað gerist ef ég stend á gati?",
+    "a2": "Gervigreindin okkar útskýrir nákvæmlega á mannamáli hvað hún er að gera. Ef þú skilur ekki, geturðu alltaf smellt á 'Af hverju?' takkann.",
+    "q3": "Hvernig virkar einingakerfið?",
+    "a3": "Þú notar einingar (Credits) fyrir hverja aðgerð. Að spjalla eða biðja um útskýringar kostar lítið, en að smíða flókinn kóða kostar meira. Þannig borgarðu aðeins fyrir nákvæmlega það sem þú notar.",
+    "q4": "Get ég gefið út kerfið mitt á eigin léni?",
+    "a4": "Já, þegar þú smellir á 'Gefa út' fer verkefnið þitt sjálfkrafa yfir á Vercel þar sem þú getur sett inn þitt eigið lén (Custom Domain) á nokkrum mínútum."
+  }
+}
