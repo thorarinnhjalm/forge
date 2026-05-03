@@ -27,7 +27,7 @@ export default function LandingHero({ title, description, ctaText }: LandingHero
         <div className="hero-actions">
           <button 
             className="cta-button" 
-            onClick={() => router.push(`/${locale}/onboarding`)}
+            onClick={() => alert(locale === 'is' ? 'Biðlisti opnar á næstu dögum. Fylgstu með!' : 'Waitlist opens in a few days. Stay tuned!')}
           >
             {ctaText}
           </button>
@@ -94,7 +94,7 @@ export default function LandingHero({ title, description, ctaText }: LandingHero
               <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> {tPrice("free_feature2")}</li>
               <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> {tPrice("free_feature3")}</li>
             </ul>
-            <button className="cta-button outline-btn" onClick={() => router.push(`/${locale}/onboarding`)}>
+            <button className="cta-button outline-btn" onClick={() => alert(locale === 'is' ? 'Biðlisti opnar á næstu dögum. Fylgstu með!' : 'Waitlist opens in a few days. Stay tuned!')}>
               {tPrice("free_cta")}
             </button>
           </div>
@@ -110,7 +110,7 @@ export default function LandingHero({ title, description, ctaText }: LandingHero
               <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> {tPrice("pro_feature2")}</li>
               <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> {tPrice("pro_feature3")}</li>
             </ul>
-            <button className="cta-button" onClick={() => router.push(`/${locale}/onboarding`)}>
+            <button className="cta-button" onClick={() => alert(locale === 'is' ? 'Biðlisti opnar á næstu dögum. Fylgstu með!' : 'Waitlist opens in a few days. Stay tuned!')}>
               {tPrice("pro_cta")}
             </button>
           </div>
@@ -157,7 +157,7 @@ export default function LandingHero({ title, description, ctaText }: LandingHero
             <a href="#features">Eiginleikar</a>
             <a href="#pricing">Verðskrá</a>
             <a href="#faq">Spurningar</a>
-            <a href="#" onClick={(e) => { e.preventDefault(); router.push(`/${locale}/onboarding`); }}>{ctaText}</a>
+            <a href="#" onClick={(e) => { e.preventDefault(); alert(locale === 'is' ? 'Biðlisti opnar á næstu dögum. Fylgstu með!' : 'Waitlist opens in a few days. Stay tuned!'); }}>{ctaText}</a>
           </div>
         </div>
         <div className="footer-bottom">
