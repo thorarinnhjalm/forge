@@ -87,26 +87,18 @@ export default function DashboardPage() {
 
   return (
     <div className="dashboard-layout">
-      <aside className="sidebar glass-panel">
-        <div className="logo">Forge</div>
-        <nav>
-          <Link href="/is/dashboard" className="active">Mín Verkefni</Link>
-        </nav>
-        
-        <div className="credits-widget">
-          <h4>Inneign (Credits)</h4>
-          <div className="gauge">
-            <div className="gauge-fill" style={{ width: credits ? Math.min(100, (credits/500)*100) + '%' : '0%' }}></div>
-          </div>
-          <p>{credits !== null ? credits : "..."} / 500</p>
-        </div>
-
-        <button className="logout-btn" onClick={handleSignOut}>Útskrá</button>
-      </aside>
-
       <main className="dash-main">
         <header className="dash-header">
-          <h1>Velkomin(n), {user?.email}</h1>
+          <div>
+            <h1>Velkomin(n), {user?.email}</h1>
+            <div className="credits-widget">
+              <span>Inneign (Credits): </span>
+              <div className="gauge">
+                <div className="gauge-fill" style={{ width: credits ? Math.min(100, (credits/500)*100) + '%' : '0%' }}></div>
+              </div>
+              <span>{credits !== null ? credits : "..."} / 500</span>
+            </div>
+          </div>
           <Link href="/is/freeform" className="cta-button" style={{ textDecoration: 'none' }}>
             + Nýtt Verkefni
           </Link>
@@ -131,7 +123,7 @@ export default function DashboardPage() {
                 <div key={session.id} className="card project-card">
                   <h3>{title}</h3>
                   <div className="card-footer" style={{ marginTop: 'auto', paddingTop: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '0.8rem', color: '#888' }}>🗓️ {dateStr}</span>
+                    <span style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)' }}>🗓️ {dateStr}</span>
                     <Link href={`/is/freeform?session=${session.id}`} className="continue-link">
                       Halda áfram
                     </Link>
@@ -146,123 +138,66 @@ export default function DashboardPage() {
       <style jsx>{`
         .dashboard-layout {
           display: flex;
-          height: 100vh;
+          min-height: calc(100vh - 72px);
           background: var(--color-bg);
           color: var(--color-text-primary);
           font-family: 'Inter', sans-serif;
         }
-        .sidebar {
-          width: 250px;
-          padding: 2rem;
-          display: flex;
-          flex-direction: column;
-          border-right: 1px solid var(--color-border);
-          background: var(--color-surface);
-        }
-        .logo {
-          font-size: 1.5rem;
-          font-weight: bold;
-          background: linear-gradient(135deg, #6c5ce7, #a29bfe);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          margin-bottom: 3rem;
-        }
-        nav {
-          display: flex;
-          flex-direction: column;
-          gap: 1rem;
-          flex: 1;
-        }
-        nav a {
-          padding: 0.8rem 1rem;
-          border-radius: 8px;
-          color: var(--color-text-secondary);
-          text-decoration: none;
-          transition: all 0.2s;
-        }
-        nav a:hover {
-          background: rgba(108, 92, 231, 0.05);
-          color: var(--color-text-primary);
-        }
-        nav a.active {
-          background: rgba(108, 92, 231, 0.1);
-          color: #a29bfe;
-          font-weight: 500;
-        }
-        .credits-widget {
-          margin-top: auto;
-          background: var(--color-surface-raised);
-          padding: 1.2rem;
-          border-radius: 12px;
-          border: 1px solid var(--color-border);
-          margin-bottom: 1rem;
-        }
-        .credits-widget h4 {
-          margin: 0 0 0.5rem 0;
-          font-size: 0.9rem;
-          color: #a29bfe;
-        }
-        .gauge {
-          height: 6px;
-          background: var(--color-surface);
-          border-radius: 10px;
-          margin: 0.8rem 0;
-          overflow: hidden;
-        }
-        .gauge-fill {
-          height: 100%;
-          background: #6c5ce7;
-          transition: width 0.5s ease;
-        }
-        .credits-widget p {
-          margin: 0;
-          font-size: 0.8rem;
-          color: var(--color-text-secondary);
-        }
-        .logout-btn {
-          background: transparent;
-          border: 1px solid var(--color-border);
-          color: var(--color-text-secondary);
-          padding: 0.8rem;
-          border-radius: 8px;
-          cursor: pointer;
-          transition: all 0.2s;
-          font-weight: 600;
-        }
-        .logout-btn:hover {
-          background: #ff4757;
-          color: white;
-          border-color: #ff4757;
-        }
-
         .dash-main {
           flex: 1;
-          padding: 3rem;
-          overflow-y: auto;
+          padding: 3rem 1rem;
+          max-width: 1000px;
+          margin: 0 auto;
+          width: 100%;
         }
         .dash-header {
           display: flex;
           justify-content: space-between;
           align-items: center;
           margin-bottom: 3rem;
+          background: var(--color-surface);
+          padding: 2rem;
+          border-radius: 12px;
+          border: 1px solid var(--color-border);
+          box-shadow: var(--shadow-sm);
         }
         .dash-header h1 {
-          font-size: 1.8rem;
-          margin: 0;
+          font-size: 1.5rem;
+          margin: 0 0 0.5rem 0;
+        }
+        .credits-widget {
+          display: flex;
+          align-items: center;
+          gap: 1rem;
+          font-size: 0.85rem;
+          color: var(--color-text-secondary);
+        }
+        .gauge {
+          width: 150px;
+          height: 6px;
+          background: var(--color-surface-raised);
+          border-radius: 10px;
+          overflow: hidden;
+        }
+        .gauge-fill {
+          height: 100%;
+          background: var(--color-accent);
+          transition: width 0.5s ease;
         }
         .cta-button {
-          background: #6c5ce7;
+          background: var(--color-accent);
           color: white;
           padding: 0.8rem 1.5rem;
-          border-radius: 8px;
+          border-radius: var(--radius-full);
           font-weight: 600;
           cursor: pointer;
-          transition: transform 0.2s;
+          transition: transform 0.2s, background-color 0.2s;
         }
         .cta-button:hover {
           transform: translateY(-2px);
-          background: #5f27cd;
+          background: var(--color-accent-hover);
         }
+
         .empty-state {
           text-align: center;
           padding: 5rem;

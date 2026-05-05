@@ -14,10 +14,10 @@ export default function TopBar() {
   const locale = params?.locale || "is";
   const otherLocale = locale === "is" ? "en" : "is";
   
-  // Conditionally hide topbar on the session builder pages and dashboard
-  const isBuilderMode = pathname.includes("/session") || pathname.includes("/dashboard");
+  const isAppMode = pathname.includes("/dashboard") || pathname.includes("/freeform") || pathname.includes("/admin");
+  const isOldBuilder = pathname.includes("/session");
 
-  if (isBuilderMode) return null;
+  if (isOldBuilder) return null;
 
   return (
     <header className="topbar">
@@ -27,19 +27,34 @@ export default function TopBar() {
         </Link>
 
         <nav className="nav-links">
-          <Link href={`/${locale}/#features`}>{t("features")}</Link>
-          <Link href={`/${locale}/#pricing`}>{t("pricing")}</Link>
-          <Link href={`/${locale}/#faq`}>{t("faq")}</Link>
+          {isAppMode ? (
+            <>
+              <Link href={`/${locale}/dashboard`}>Mælaborð</Link>
+              <Link href={`/${locale}/freeform`}>Nýtt Verkefni</Link>
+            </>
+          ) : (
+            <>
+              <Link href={`/${locale}/#features`}>{t("features")}</Link>
+              <Link href={`/${locale}/#pricing`}>{t("pricing")}</Link>
+              <Link href={`/${locale}/#faq`}>{t("faq")}</Link>
+            </>
+          )}
         </nav>
 
         <div className="nav-actions">
           <Link href={`/${otherLocale}${pathname.replace(`/${locale}`, "")}`} className="lang-toggle">
             {otherLocale.toUpperCase()}
           </Link>
-          <button className="text-btn" onClick={() => router.push(`/${locale}/dashboard`)}>{t("signIn")}</button>
-          <button className="cta-button nav-cta" onClick={() => router.push(`/${locale}/onboarding`)}>
-            {t("startBuilding")}
-          </button>
+          {isAppMode ? (
+            <button className="text-btn" onClick={() => router.push(`/${locale}/login`)}>Útskrá</button>
+          ) : (
+            <>
+              <button className="text-btn" onClick={() => router.push(`/${locale}/dashboard`)}>{t("signIn")}</button>
+              <button className="cta-button nav-cta" onClick={() => router.push(`/${locale}/onboarding`)}>
+                {t("startBuilding")}
+              </button>
+            </>
+          )}
         </div>
       </div>
 
