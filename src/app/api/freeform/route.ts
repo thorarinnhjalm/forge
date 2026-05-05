@@ -69,7 +69,14 @@ export async function POST(request: NextRequest) {
     if (!sessionCookie) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    const decodedClaims = await adminAuth.verifySessionCookie(sessionCookie);
+    
+    let decodedClaims;
+    try {
+      decodedClaims = await adminAuth.verifySessionCookie(sessionCookie);
+    } catch (authError) {
+      console.error("[freeform] Auth error:", authError);
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
     const uid = decodedClaims.uid;
 
     const { description, sessionId, sandboxId, currentFiles, history = [] } = await request.json();

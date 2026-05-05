@@ -10,7 +10,13 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
-    const decodedClaims = await adminAuth.verifySessionCookie(sessionCookie);
+    let decodedClaims;
+    try {
+      decodedClaims = await adminAuth.verifySessionCookie(sessionCookie);
+    } catch (authError) {
+      console.error("[admin] Auth error:", authError);
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
     const uid = decodedClaims.uid;
     const userRecord = await adminAuth.getUser(uid);
 

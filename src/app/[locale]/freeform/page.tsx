@@ -639,7 +639,7 @@ function FreeformContent() {
           margin-bottom: 0.5rem;
         }
         .freeform-header p {
-          color: #888;
+          color: var(--color-text-secondary);
           font-size: 1rem;
         }
 
@@ -697,7 +697,7 @@ function FreeformContent() {
           justify-content: center;
           height: 100%;
           text-align: center;
-          color: #888;
+          color: var(--color-text-secondary);
           gap: 0.5rem;
         }
         .empty-icon {
@@ -706,7 +706,7 @@ function FreeformContent() {
         }
         .empty-sub {
           font-size: 0.85rem;
-          color: #555;
+          color: var(--color-text-secondary);
         }
 
         .chat-message {
@@ -755,8 +755,8 @@ function FreeformContent() {
         }
 
         .option-card {
-          background: #111122;
-          border: 1px solid #444;
+          background: var(--color-surface-raised);
+          border: 1px solid var(--color-border);
           border-radius: 10px;
           padding: 1rem;
           display: flex;
@@ -765,13 +765,13 @@ function FreeformContent() {
         }
         .option-card h4 {
           margin: 0;
-          color: #a29bfe;
+          color: var(--color-accent);
           font-size: 1rem;
         }
         .opt-desc {
           margin: 0;
           font-size: 0.85rem;
-          color: #aaa;
+          color: var(--color-text-secondary);
         }
 
         .opt-lists {
@@ -779,7 +779,7 @@ function FreeformContent() {
           flex-direction: column;
           gap: 0.5rem;
           font-size: 0.8rem;
-          background: #0a0a1a;
+          background: var(--color-surface);
           padding: 0.5rem;
           border-radius: 6px;
         }
@@ -1029,34 +1029,34 @@ function FreeformContent() {
         /* Code Window CSS */
         .file-tabs {
           display: flex;
-          background: #1a1a2e;
-          border-bottom: 1px solid #222;
+          background: var(--color-surface);
+          border-bottom: 1px solid var(--color-border);
           overflow-x: auto;
         }
         .file-tabs button {
           background: transparent;
           border: none;
-          color: #888;
+          color: var(--color-text-secondary);
           padding: 0.6rem 1.2rem;
           font-family: monospace;
           font-size: 0.85rem;
           cursor: pointer;
-          border-right: 1px solid #222;
+          border-right: 1px solid var(--color-border);
           transition: all 0.2s;
         }
         .file-tabs button:hover {
-          background: #222233;
-          color: #ccc;
+          background: var(--color-surface-raised);
+          color: var(--color-text-primary);
         }
         .file-tabs button.active {
-          background: #2d2d44;
-          color: #a29bfe;
-          border-top: 2px solid #6c5ce7;
+          background: var(--color-surface);
+          color: var(--color-accent);
+          border-top: 2px solid var(--color-accent);
         }
 
         .code-content {
           flex: 1;
-          background: #0d0d16;
+          background: var(--color-surface-raised);
           overflow: auto;
           padding: 1.5rem;
         }
@@ -1065,7 +1065,7 @@ function FreeformContent() {
           font-family: 'Fira Code', 'Courier New', Courier, monospace;
           font-size: 0.9rem;
           line-height: 1.5;
-          color: #e0e0e0;
+          color: var(--color-text-primary);
           white-space: pre-wrap;
         }
 
@@ -1075,7 +1075,7 @@ function FreeformContent() {
           align-items: center;
           justify-content: center;
           height: 100%;
-          color: #999;
+          color: var(--color-text-secondary);
           gap: 1rem;
         }
         .placeholder-icon {
@@ -1123,8 +1123,8 @@ function FreeformContent() {
           position: relative;
           width: 90%;
           max-width: 400px;
-          background: #111122;
-          border: 1px solid #333;
+          background: var(--color-surface);
+          border: 1px solid var(--color-border);
           border-radius: 12px;
           padding: 2rem;
           text-align: left;
@@ -1136,7 +1136,7 @@ function FreeformContent() {
           background: none;
           border: none;
           font-size: 1.5rem;
-          color: #888;
+          color: var(--color-text-secondary);
           cursor: pointer;
         }
         .github-form {
@@ -1152,18 +1152,18 @@ function FreeformContent() {
         }
         .form-group label {
           font-size: 0.9rem;
-          color: #ccc;
+          color: var(--color-text-primary);
         }
         .form-group input {
-          background: #1a1a2e;
-          border: 1px solid #333;
+          background: var(--color-surface-raised);
+          border: 1px solid var(--color-border);
           padding: 0.8rem;
           border-radius: 6px;
-          color: white;
+          color: var(--color-text-primary);
           font-family: monospace;
         }
         .form-group small {
-          color: #888;
+          color: var(--color-text-secondary);
           font-size: 0.75rem;
         }
         .success-content {
