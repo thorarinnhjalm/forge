@@ -162,8 +162,8 @@ export default function AdminDashboard() {
       <style jsx>{`
         .admin-layout {
           min-height: 100vh;
-          background: #05050a;
-          color: #e0e0e0;
+          background: var(--color-bg);
+          color: var(--color-text-primary);
           font-family: 'Inter', sans-serif;
           display: flex;
           flex-direction: column;
@@ -174,8 +174,8 @@ export default function AdminDashboard() {
           justify-content: space-between;
           align-items: center;
           padding: 1.5rem 3rem;
-          background: #0a0a15;
-          border-bottom: 1px solid #ff4757;
+          background: var(--color-surface);
+          border-bottom: 1px solid var(--color-border);
         }
         .admin-header h1 {
           margin: 0;
@@ -189,12 +189,12 @@ export default function AdminDashboard() {
           content: '👑';
         }
         .back-link {
-          color: #888;
+          color: var(--color-text-secondary);
           text-decoration: none;
           transition: color 0.2s;
         }
         .back-link:hover {
-          color: white;
+          color: var(--color-accent);
         }
 
         .admin-main {
@@ -211,15 +211,15 @@ export default function AdminDashboard() {
           gap: 1.5rem;
         }
         .metric-card {
-          background: #111122;
-          border: 1px solid #333;
+          background: var(--color-surface);
+          border: 1px solid var(--color-border);
           border-radius: 12px;
           padding: 2rem;
           text-align: center;
         }
         .metric-card h3 {
           margin: 0 0 1rem 0;
-          color: #888;
+          color: var(--color-text-secondary);
           font-size: 1rem;
           text-transform: uppercase;
           letter-spacing: 1px;
@@ -245,15 +245,15 @@ export default function AdminDashboard() {
         .admin-section h2 {
           font-size: 1.2rem;
           margin-bottom: 1rem;
-          color: #fff;
-          border-bottom: 1px solid #333;
+          color: var(--color-text-primary);
+          border-bottom: 1px solid var(--color-border);
           padding-bottom: 0.5rem;
         }
 
         .table-container {
-          background: #111122;
+          background: var(--color-surface);
           border-radius: 12px;
-          border: 1px solid #333;
+          border: 1px solid var(--color-border);
           overflow: hidden;
         }
         table {
@@ -263,19 +263,19 @@ export default function AdminDashboard() {
         }
         th, td {
           padding: 1rem;
-          border-bottom: 1px solid #222;
+          border-bottom: 1px solid var(--color-border);
         }
         th {
-          background: #1a1a2e;
+          background: var(--color-surface-raised);
           font-size: 0.85rem;
-          color: #888;
+          color: var(--color-text-secondary);
           text-transform: uppercase;
         }
         tr:last-child td {
           border-bottom: none;
         }
         tr:hover {
-          background: rgba(255, 255, 255, 0.02);
+          background: rgba(0, 0, 0, 0.02);
         }
 
         .credit-badge {

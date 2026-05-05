@@ -622,8 +622,8 @@ function FreeformContent() {
           min-height: 100vh;
           display: flex;
           flex-direction: column;
-          background: #0a0a1a;
-          color: #e0e0e0;
+          background: var(--color-bg);
+          color: var(--color-text-primary);
           font-family: 'Inter', sans-serif;
         }
 
@@ -656,9 +656,10 @@ function FreeformContent() {
           width: 480px;
           display: flex;
           flex-direction: column;
-          background: #111122;
+          background: var(--color-surface);
           border-radius: 16px;
-          border: 1px solid #222;
+          border: 1px solid var(--color-border);
+          box-shadow: var(--shadow-sm);
           overflow: hidden;
         }
 
@@ -728,21 +729,22 @@ function FreeformContent() {
           width: 100%;
         }
         .chat-message.user .message-content {
-          background: linear-gradient(135deg, #6c5ce7, #5f27cd);
+          background: linear-gradient(135deg, var(--color-accent), var(--color-accent-hover));
           color: white;
           border-bottom-right-radius: 2px;
+          box-shadow: 0 2px 4px rgba(108, 92, 231, 0.2);
         }
         .chat-message.user .message-content p {
           color: white;
         }
         .chat-message.forge .message-content {
-          background: #1a1a2e;
-          color: #e0e0e0;
-          border: 1px solid #333;
+          background: var(--color-surface-raised);
+          color: var(--color-text-primary);
+          border: 1px solid var(--color-border);
           border-bottom-left-radius: 2px;
         }
         .chat-message.forge .message-content p {
-          color: #e0e0e0;
+          color: var(--color-text-primary);
         }
 
         .options-grid {
@@ -814,8 +816,8 @@ function FreeformContent() {
 
         .typing-indicator {
           align-self: flex-start;
-          background: #1a1a2e;
-          border: 1px solid #333;
+          background: var(--color-surface-raised);
+          border: 1px solid var(--color-border);
           padding: 0.8rem 1rem;
           border-radius: 12px;
           border-bottom-left-radius: 2px;
@@ -838,8 +840,8 @@ function FreeformContent() {
 
         .chat-input-area {
           padding: 1rem;
-          background: #0d0d1a;
-          border-top: 1px solid #222;
+          background: var(--color-surface);
+          border-top: 1px solid var(--color-border);
           display: flex;
           flex-direction: column;
           gap: 0.8rem;
@@ -847,18 +849,21 @@ function FreeformContent() {
 
         textarea {
           width: 100%;
-          background: #1a1a2e;
-          border: 1px solid #333;
+          background: var(--color-surface-raised);
+          border: 1px solid var(--color-border);
           border-radius: 12px;
           padding: 0.8rem 1rem;
-          color: #f0f0f0;
+          color: var(--color-text-primary);
           font-size: 0.95rem;
           resize: none;
           outline: none;
           font-family: inherit;
+          transition: border-color 0.2s, box-shadow 0.2s;
         }
         textarea:focus {
-          border-color: #6c5ce7;
+          border-color: var(--color-accent);
+          background: var(--color-surface);
+          box-shadow: 0 0 0 3px rgba(108, 92, 231, 0.1);
         }
 
         .build-btn {
@@ -923,9 +928,10 @@ function FreeformContent() {
           flex: 1;
           display: flex;
           flex-direction: column;
-          background: #111122;
+          background: var(--color-surface);
           border-radius: 12px;
-          border: 1px solid #333;
+          border: 1px solid var(--color-border);
+          box-shadow: var(--shadow-sm);
           overflow: hidden;
         }
 
@@ -933,14 +939,14 @@ function FreeformContent() {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          background: #0a0a1a;
-          border-bottom: 1px solid #222;
+          background: var(--color-surface-raised);
+          border-bottom: 1px solid var(--color-border);
           padding: 0.5rem 1rem 0;
         }
         .panel-tabs button {
           background: transparent;
           border: none;
-          color: #888;
+          color: var(--color-text-secondary);
           padding: 0.8rem 1.5rem;
           font-size: 0.95rem;
           font-weight: 500;
@@ -949,11 +955,11 @@ function FreeformContent() {
           transition: all 0.2s;
         }
         .panel-tabs button:hover {
-          color: #e0e0e0;
+          color: var(--color-text-primary);
         }
         .panel-tabs button.active {
-          color: #a29bfe;
-          border-bottom-color: #6c5ce7;
+          color: var(--color-accent);
+          border-bottom-color: var(--color-accent);
         }
 
         .github-btn {
@@ -983,8 +989,8 @@ function FreeformContent() {
           display: flex;
           align-items: center;
           padding: 0.5rem 1rem;
-          background: #1a1a2e;
-          border-bottom: 1px solid #333;
+          background: var(--color-surface-raised);
+          border-bottom: 1px solid var(--color-border);
           gap: 1rem;
         }
         .dots {
@@ -995,7 +1001,7 @@ function FreeformContent() {
           width: 10px;
           height: 10px;
           border-radius: 50%;
-          background: #333;
+          background: #ccc;
         }
         .dots span:first-child { background: #ff5f57; }
         .dots span:nth-child(2) { background: #ffbd2e; }
@@ -1003,11 +1009,12 @@ function FreeformContent() {
 
         .url-bar {
           flex: 1;
-          background: #0a0a1a;
+          background: var(--color-surface);
+          border: 1px solid var(--color-border);
           padding: 4px 12px;
           border-radius: 6px;
           font-size: 0.8rem;
-          color: #666;
+          color: var(--color-text-secondary);
           text-align: center;
           overflow: hidden;
           text-overflow: ellipsis;

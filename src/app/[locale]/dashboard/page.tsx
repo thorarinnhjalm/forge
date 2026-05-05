@@ -147,8 +147,8 @@ export default function DashboardPage() {
         .dashboard-layout {
           display: flex;
           height: 100vh;
-          background: #0a0a1a;
-          color: #e0e0e0;
+          background: var(--color-bg);
+          color: var(--color-text-primary);
           font-family: 'Inter', sans-serif;
         }
         .sidebar {
@@ -156,8 +156,8 @@ export default function DashboardPage() {
           padding: 2rem;
           display: flex;
           flex-direction: column;
-          border-right: 1px solid #222;
-          background: #111122;
+          border-right: 1px solid var(--color-border);
+          background: var(--color-surface);
         }
         .logo {
           font-size: 1.5rem;
@@ -176,13 +176,13 @@ export default function DashboardPage() {
         nav a {
           padding: 0.8rem 1rem;
           border-radius: 8px;
-          color: #888;
+          color: var(--color-text-secondary);
           text-decoration: none;
           transition: all 0.2s;
         }
         nav a:hover {
           background: rgba(108, 92, 231, 0.05);
-          color: #e0e0e0;
+          color: var(--color-text-primary);
         }
         nav a.active {
           background: rgba(108, 92, 231, 0.1);
@@ -191,10 +191,10 @@ export default function DashboardPage() {
         }
         .credits-widget {
           margin-top: auto;
-          background: #1a1a2e;
+          background: var(--color-surface-raised);
           padding: 1.2rem;
           border-radius: 12px;
-          border: 1px solid #333;
+          border: 1px solid var(--color-border);
           margin-bottom: 1rem;
         }
         .credits-widget h4 {
@@ -204,7 +204,7 @@ export default function DashboardPage() {
         }
         .gauge {
           height: 6px;
-          background: #0a0a1a;
+          background: var(--color-surface);
           border-radius: 10px;
           margin: 0.8rem 0;
           overflow: hidden;
@@ -217,12 +217,12 @@ export default function DashboardPage() {
         .credits-widget p {
           margin: 0;
           font-size: 0.8rem;
-          color: #888;
+          color: var(--color-text-secondary);
         }
         .logout-btn {
           background: transparent;
-          border: 1px solid #444;
-          color: #888;
+          border: 1px solid var(--color-border);
+          color: var(--color-text-secondary);
           padding: 0.8rem;
           border-radius: 8px;
           cursor: pointer;
@@ -266,10 +266,10 @@ export default function DashboardPage() {
         .empty-state {
           text-align: center;
           padding: 5rem;
-          background: #111122;
+          background: var(--color-surface);
           border-radius: 16px;
-          border: 1px dashed #333;
-          color: #888;
+          border: 1px dashed var(--color-border);
+          color: var(--color-text-secondary);
         }
         .projects-grid {
           display: grid;
@@ -277,8 +277,8 @@ export default function DashboardPage() {
           gap: 1.5rem;
         }
         .project-card {
-          background: #111122;
-          border: 1px solid #222;
+          background: var(--color-surface);
+          border: 1px solid var(--color-border);
           border-radius: 12px;
           padding: 1.5rem;
           display: flex;
