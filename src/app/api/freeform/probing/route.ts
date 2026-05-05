@@ -17,11 +17,21 @@ ${history.map(m => `${m.role === 'user' ? 'User' : 'Forge'}: ${m.content}`).join
 15. If providing options, limit them to 2-3 maximum.
 16. If confidence >= 50% and no major educational choice is needed, set readyToBuild to true and DO NOT ask questions.
 
+IMAGE UPLOAD DETECTION — set needsImageUpload: true if the user needs to:
+- Upload their own photos or images to the site
+- Show a personal portfolio, gallery, or showcase of their own work
+- Allow visitors to upload images
+Do NOT set this for apps that just display static placeholder images.
+
+If needsImageUpload is true AND readyToBuild is false, ask for their Cloudinary credentials:
+"Til að myndir þínar virki á netinu þarftu fríjan Cloudinary aðgang. Farðu á cloudinary.com, búðu til fríjan aðgang, og sendu mér: (1) Cloud Name og (2) Upload Preset nafn (unsigned). Ef þú ert ekki með þetta ennþá getum við byrjað með placeholder myndir."
+
 Output format: Return JSON exactly matching this schema:
 {
-  "confidence": number,
-  "readyToBuild": boolean,
-  "question": "The question to ask the user, in Icelandic. Only required if readyToBuild is false.",
+  "confidence": 85,
+  "readyToBuild": false,
+  "needsImageUpload": false,
+  "question": "Spurning á íslensku.",
   "options": [
     {
       "id": "string",
@@ -75,6 +85,8 @@ export async function POST(request: NextRequest) {
       success: true,
       confidence: payload.confidence,
       readyToBuild: payload.readyToBuild,
+      needsBackend: payload.needsBackend ?? false,
+      needsImageUpload: payload.needsImageUpload ?? false,
       question: payload.question,
       options: payload.options || null,
     });

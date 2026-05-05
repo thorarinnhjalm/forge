@@ -31,13 +31,22 @@ CRITICAL RULES:
   - Make it responsive and polished for all screen sizes.
 - NEVER ask the user to provide text copy. Generate realistic placeholder content (e.g. realistic names, descriptions, articles) yourself!
 
-Output format: Return JSON exactly matching this schema:
+Output STRICT JSON, no comments, no trailing commas, double-quoted strings only:
 {
   "files": [
-    { "path": "string", "content": "string" }
+    { "path": "index.html", "content": "..." },
+    { "path": "style.css", "content": "..." },
+    { "path": "app.js", "content": "..." }
   ],
-  "explanation": "Brief description of what was built, in Icelandic",
-  "conceptTags": ["Tag 1", "Tag 2", "Tag 3"]
+  "explanation": "Stutt lýsing á því sem var byggt, á íslensku",
+  "conceptTags": ["CSS Flexbox", "localStorage", "DOM Events"],
+  "learningPoints": [
+    {
+      "concept": "CSS Flexbox",
+      "why": "Notað til að raða kortum í röð sem brotnar á minni skjáum",
+      "snippet": "display: flex;\\nflex-wrap: wrap;\\ngap: 1rem;"
+    }
+  ]
 }
 `;
 
@@ -62,14 +71,73 @@ CRITICAL RULES:
 - NEVER ask the user to provide text copy. Generate realistic placeholder content yourself!
 - The explanation must be in Icelandic and describe briefly what changed.
 
-Output format: Return JSON exactly matching this schema:
+Output STRICT JSON, no comments, no trailing commas, double-quoted strings only:
 {
   "files": [
-    { "path": "string", "content": "string" }
+    { "path": "index.html", "content": "..." }
   ],
-  "explanation": "Brief description of what changed, in Icelandic",
-  "conceptTags": ["Tag 1", "Tag 2", "Tag 3"]
+  "explanation": "Stutt lýsing á breytingunum, á íslensku",
+  "conceptTags": ["CSS Grid", "Event Listener"],
+  "learningPoints": [
+    {
+      "concept": "CSS Grid",
+      "why": "Skipt yfir í Grid til að gefa meiri stjórn á dálka-uppbyggingu",
+      "snippet": "display: grid;\\ngrid-template-columns: repeat(auto-fill, minmax(280px, 1fr));"
+    }
+  ]
 }
+`;
+
+const IMAGE_UPLOAD_SNIPPET = (cloudName: string, uploadPreset: string) => `
+IMAGE UPLOAD SYSTEM (Cloudinary + Firestore):
+The app needs real image upload. Use this exact architecture:
+
+CLOUDINARY CONFIG:
+  cloud_name: "${cloudName}"
+  upload_preset: "${uploadPreset}"
+
+FIRESTORE CONFIG:
+  Use the Firebase config already present in the app.
+  Collection: "forge_gallery"
+  Document structure: { url: string, publicId: string, caption: string, uploadedAt: timestamp }
+
+REQUIRED FILES TO GENERATE:
+1. index.html — Public portfolio/gallery page
+   - On load, fetch all docs from "forge_gallery" collection ordered by uploadedAt desc
+   - Render images in a responsive masonry/grid layout
+   - Uses Firebase SDK v9 compat via CDN:
+     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
+2. admin.html — Password-protected upload page (link hidden from public)
+   - Simple password check: localStorage.getItem('forge_admin') === 'true', if not set show password prompt
+   - Uses Cloudinary Upload Widget via CDN:
+     <script src="https://upload-widget.cloudinary.com/global/all.js"></script>
+   - On successful upload: save { url, publicId, caption, uploadedAt: new Date() } to Firestore "forge_gallery"
+   - Show uploaded images list with delete option (deletes from Firestore only — Cloudinary cleanup is manual)
+
+FIREBASE INITIALIZATION (in every JS file that uses Firestore):
+const firebaseConfig = {
+  apiKey: "REPLACE_WITH_YOUR_FIREBASE_API_KEY",
+  authDomain: "REPLACE_WITH_YOUR_AUTH_DOMAIN",
+  projectId: "REPLACE_WITH_YOUR_PROJECT_ID"
+};
+if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+Add HTML comments: <!-- Skiptu REPLACE_WITH_YOUR_FIREBASE_* út fyrir þín Firebase gildi frá Firebase Console -->
+
+CLOUDINARY UPLOAD WIDGET USAGE:
+const widget = cloudinary.createUploadWidget(
+  { cloudName: "${cloudName}", uploadPreset: "${uploadPreset}", multiple: true, maxFiles: 20 },
+  (error, result) => {
+    if (!error && result.event === "success") {
+      const { secure_url, public_id } = result.info;
+      // save to Firestore here
+    }
+  }
+);
+widget.open();
 `;
 
 export async function POST(request: NextRequest) {
@@ -88,7 +156,7 @@ export async function POST(request: NextRequest) {
     }
     const uid = decodedClaims.uid;
 
-    const { description, sessionId, sandboxId, currentFiles, history = [] } = await request.json();
+    const { description, sessionId, sandboxId, currentFiles, history = [], needsBackend = false, needsImageUpload = false, cloudinaryCloudName = "", cloudinaryUploadPreset = "" } = await request.json();
 
     if (!description) {
       return NextResponse.json({ error: "Missing description" }, { status: 400 });
@@ -99,7 +167,9 @@ export async function POST(request: NextRequest) {
     // 1. Ask Gemini to generate the app
     const prompt = isIterative 
       ? ITERATIVE_PROMPT(description, currentFiles, history)
-      : FREEFORM_PROMPT(description, history);
+      : FREEFORM_PROMPT(description, history) + (needsImageUpload && cloudinaryCloudName
+          ? "\n\n" + IMAGE_UPLOAD_SNIPPET(cloudinaryCloudName, cloudinaryUploadPreset)
+          : "");
 
     const { data: codePayload, tokensUsed } = await generateJson(prompt, undefined, MODELS.FLASH);
 
@@ -142,6 +212,7 @@ export async function POST(request: NextRequest) {
       success: true,
       explanation: codePayload.explanation,
       conceptTags: codePayload.conceptTags || [],
+      learningPoints: codePayload.learningPoints || [],
       previewUrl: result.previewUrl,
       sandboxId: sandbox.sandboxId,
       files: finalFiles,

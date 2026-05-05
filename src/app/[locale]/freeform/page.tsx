@@ -22,11 +22,18 @@ type Option = {
   cons: string[];
 };
 
+type LearningPoint = {
+  concept: string;
+  why: string;
+  snippet: string;
+};
+
 type Message = {
   role: "user" | "forge";
   content: string;
   options?: Option[];
   conceptTags?: string[];
+  learningPoints?: LearningPoint[];
 };
 
 export default function FreeformPage() {
@@ -55,6 +62,13 @@ function FreeformContent() {
 
   const [error, setError] = useState<string | null>(null);
   const [tipIndex, setTipIndex] = useState(0);
+
+  const [expandedLearning, setExpandedLearning] = useState<Record<string, boolean>>({});
+  const [conceptExplanations, setConceptExplanations] = useState<Record<string, string | "loading">>({});
+
+  const [needsImageUpload, setNeedsImageUpload] = useState<boolean>(false);
+  const [cloudinaryCloudName, setCloudinaryCloudName] = useState<string>("");
+  const [cloudinaryUploadPreset, setCloudinaryUploadPreset] = useState<string>("");
 
   const [user, setUser] = useState<User | null>(null);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
@@ -128,6 +142,30 @@ function FreeformContent() {
     saveSession();
   }, [messages, sandboxId, currentFiles, user, sessionId]);
 
+  // Syntax Highlighting
+  useEffect(() => {
+    if (document.getElementById('hljs-css')) return;
+
+    const link = document.createElement('link');
+    link.id = 'hljs-css';
+    link.rel = 'stylesheet';
+    link.href = 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css';
+    document.head.appendChild(link);
+
+    const script = document.createElement('script');
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js';
+    script.onload = () => {
+      (window as any).hljs?.highlightAll();
+    };
+    document.head.appendChild(script);
+  }, []);
+
+  useEffect(() => {
+    if (activeView === 'code' && (window as any).hljs) {
+      (window as any).hljs.highlightAll();
+    }
+  }, [activeView, selectedFile, currentFiles]);
+
   // Auto-scroll to bottom of chat
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -143,6 +181,14 @@ function FreeformContent() {
     const updatedMessages: Message[] = [...messages, { role: "user", content: userPrompt }];
     setMessages(updatedMessages);
     setError(null);
+
+    // If waiting for image upload credentials, try to parse them
+    if (needsImageUpload && userPrompt.toLowerCase().includes("cloud")) {
+      const match1 = userPrompt.match(/cloud( |_)name[:\s]*([^\s,;]+)/i);
+      const match2 = userPrompt.match(/preset[:\s]*([^\s,;]+)/i);
+      if (match1) setCloudinaryCloudName(match1[2]);
+      if (match2) setCloudinaryUploadPreset(match2[1]);
+    }
 
     // If sandboxId exists, we are iterating an existing app. Bypass probing.
     if (sandboxId) {
@@ -166,6 +212,8 @@ function FreeformContent() {
       const probeData = await probeRes.json();
 
       if (probeData.success) {
+        if (probeData.needsImageUpload) setNeedsImageUpload(true);
+
         if (!probeData.readyToBuild) {
           // Not ready to build, ask the question
           setMessages((prev) => [
@@ -230,7 +278,10 @@ function FreeformContent() {
           description: latestPrompt, // Used for the FREEFORM_PROMPT if it's the first time
           sandboxId,
           currentFiles,
-          history: historyToUse
+          history: historyToUse,
+          needsImageUpload,
+          cloudinaryCloudName,
+          cloudinaryUploadPreset
         }),
       });
       const data = await res.json();
@@ -249,7 +300,8 @@ function FreeformContent() {
             { 
               role: "forge", 
               content: data.explanation,
-              conceptTags: data.conceptTags 
+              conceptTags: data.conceptTags,
+              learningPoints: data.learningPoints || [],
             }
           ]);
         }
@@ -268,6 +320,25 @@ function FreeformContent() {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       processUserInput(description);
+    }
+  };
+
+  const handleConceptClick = async (concept: string) => {
+    if (conceptExplanations[concept] || !currentFiles) return;
+    setConceptExplanations(prev => ({ ...prev, [concept]: "loading" }));
+    try {
+      const res = await fetch("/api/freeform/explain-concept", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ concept, currentFiles }),
+      });
+      const data = await res.json();
+      setConceptExplanations(prev => ({
+        ...prev,
+        [concept]: data.success ? data.explanation : "Gat ekki sótt útskýringu."
+      }));
+    } catch {
+      setConceptExplanations(prev => ({ ...prev, [concept]: "Gat ekki sótt útskýringu." }));
     }
   };
 
@@ -414,8 +485,52 @@ function FreeformContent() {
                   {msg.conceptTags && msg.conceptTags.length > 0 && (
                     <div className="concept-tags">
                       {msg.conceptTags.map(tag => (
-                        <span key={tag} className="concept-tag">{tag}</span>
+                        <div key={tag} className="concept-tag-wrapper">
+                          <button
+                            className={`concept-tag ${currentFiles ? 'clickable' : ''}`}
+                            onClick={() => currentFiles && handleConceptClick(tag)}
+                            title={currentFiles ? "Smelltu til að læra meira" : ""}
+                          >
+                            {tag}
+                          </button>
+                          {conceptExplanations[tag] && (
+                            <div className="concept-explanation">
+                              {conceptExplanations[tag] === "loading"
+                                ? <span className="concept-loading">Hleður útskýringu...</span>
+                                : <p>{conceptExplanations[tag]}</p>
+                              }
+                            </div>
+                          )}
+                        </div>
                       ))}
+                    </div>
+                  )}
+
+                  {/* Learning Points */}
+                  {msg.learningPoints && msg.learningPoints.length > 0 && (
+                    <div className="learning-points">
+                      <p className="learning-label">📚 Hvað lærðirðu í þessu?</p>
+                      {msg.learningPoints.map((lp, i) => {
+                        const key = `${idx}-${i}`;
+                        const isOpen = expandedLearning[key];
+                        return (
+                          <div key={key} className="learning-card">
+                            <button
+                              className="learning-header"
+                              onClick={() => setExpandedLearning(prev => ({ ...prev, [key]: !prev[key] }))}
+                            >
+                              <span className="learning-concept">{lp.concept}</span>
+                              <span className="learning-chevron">{isOpen ? '▲' : '▼'}</span>
+                            </button>
+                            {isOpen && (
+                              <div className="learning-body">
+                                <p className="learning-why">{lp.why}</p>
+                                <pre className="learning-snippet"><code>{lp.snippet}</code></pre>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
 
@@ -542,11 +657,19 @@ function FreeformContent() {
                     ))}
                   </div>
                   <div className="code-content">
-                    <pre>
-                      <code>
-                        {currentFiles.find(f => f.path === (selectedFile || currentFiles[0].path))?.content || ""}
-                      </code>
-                    </pre>
+                    {(() => {
+                      const file = currentFiles.find(f => f.path === (selectedFile || currentFiles[0].path));
+                      const ext = file?.path?.split('.').pop() || 'html';
+                      const langMap: Record<string, string> = { html: 'html', css: 'css', js: 'javascript' };
+                      const lang = langMap[ext] || 'plaintext';
+                      return (
+                        <pre>
+                          <code className={`language-${lang}`}>
+                            {file?.content || ""}
+                          </code>
+                        </pre>
+                      );
+                    })()}
                   </div>
                 </>
               ) : (
@@ -680,6 +803,11 @@ function FreeformContent() {
           padding-top: 0.8rem;
           border-top: 1px solid rgba(255,255,255,0.05);
         }
+        .concept-tag-wrapper {
+          display: flex;
+          flex-direction: column;
+          gap: 0.5rem;
+        }
         .concept-tag {
           background: rgba(108, 92, 231, 0.2);
           color: #a29bfe;
@@ -688,6 +816,97 @@ function FreeformContent() {
           font-size: 0.75rem;
           font-family: monospace;
           border: 1px solid rgba(108, 92, 231, 0.4);
+          cursor: default;
+          text-align: left;
+        }
+        .concept-tag.clickable {
+          cursor: pointer;
+          transition: all 0.15s ease;
+        }
+        .concept-tag.clickable:hover {
+          background: rgba(108, 92, 231, 0.4);
+          border-color: #a29bfe;
+        }
+        .concept-explanation {
+          background: rgba(108, 92, 231, 0.07);
+          border: 1px solid rgba(108, 92, 231, 0.2);
+          border-radius: 6px;
+          padding: 0.75rem;
+          font-size: 0.85rem;
+          color: #ccc;
+          line-height: 1.6;
+        }
+        .concept-explanation p {
+          margin: 0;
+        }
+        .concept-loading {
+          color: #666;
+          font-size: 0.8rem;
+          font-style: italic;
+        }
+
+        .learning-points {
+          margin-top: 1rem;
+          padding-top: 1rem;
+          border-top: 1px solid rgba(255,255,255,0.05);
+          display: flex;
+          flex-direction: column;
+          gap: 0.5rem;
+        }
+        .learning-label {
+          font-size: 0.8rem;
+          color: #888;
+          margin: 0 0 0.25rem 0;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+        }
+        .learning-card {
+          border: 1px solid rgba(108, 92, 231, 0.25);
+          border-radius: 8px;
+          overflow: hidden;
+          background: rgba(108, 92, 231, 0.05);
+        }
+        .learning-header {
+          width: 100%;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 0.6rem 0.8rem;
+          background: transparent;
+          border: none;
+          cursor: pointer;
+          text-align: left;
+        }
+        .learning-concept {
+          font-size: 0.85rem;
+          font-weight: 600;
+          color: #a29bfe;
+          font-family: monospace;
+        }
+        .learning-chevron {
+          font-size: 0.65rem;
+          color: #666;
+        }
+        .learning-body {
+          padding: 0.75rem;
+          border-top: 1px solid rgba(108, 92, 231, 0.15);
+        }
+        .learning-why {
+          font-size: 0.85rem;
+          color: #ccc;
+          margin: 0 0 0.75rem 0;
+          line-height: 1.5;
+        }
+        .learning-snippet {
+          background: #0a0a15;
+          border-radius: 6px;
+          padding: 0.75rem;
+          margin: 0;
+          overflow-x: auto;
+          font-family: 'Fira Code', 'Courier New', monospace;
+          font-size: 0.8rem;
+          color: #a29bfe;
+          line-height: 1.6;
         }
 
         .empty-chat {

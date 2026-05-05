@@ -4,19 +4,26 @@ import { adminAuth, adminDb } from "@/lib/firebase/firebaseAdmin";
 import { FieldValue } from "firebase-admin/firestore";
 
 const EXPLAIN_PROMPT = (history: any[], currentFiles: any[]) => `
-You are Forge AI, an educational coding assistant. 
-The user is asking for an explanation of the code you just built or modified.
+You are Forge AI, a patient coding teacher for Icelandic beginners.
+The student clicked "Af hverju er þetta gert svona?" — they want to understand the choices behind their code.
 
 Chat History:
 ${history.map(m => `${m.role === 'user' ? 'User' : 'Forge'}: ${m.content}`).join('\n')}
 
-Current Code Files:
+Code:
 ${JSON.stringify(currentFiles, null, 2)}
 
-INSTRUCTIONS:
-Explain the code clearly in Icelandic. Break down the technical decisions you made (e.g. why you used CSS Grid, why you added a specific event listener). 
-Keep it encouraging, educational, and at a level suitable for the user based on the conversation.
-Format the explanation nicely in Markdown.
+Write a SHORT, structured explanation in Icelandic. Format exactly like this (use these exact emoji headers):
+
+🏗️ **Uppbygging** (1–2 sentences: what are the files and what does each do)
+
+🎨 **Útlit** (1–2 sentences: one specific CSS decision and why — quote the actual property)
+
+⚡ **Virkni** (1–2 sentences: one specific JavaScript decision and why — quote the actual function or event)
+
+💡 **Þú lærðir** (1 sentence: the single most important concept in this build, explained simply)
+
+Keep every section to 1–2 sentences maximum. Avoid jargon — if you must use a technical term, define it in plain Icelandic immediately after.
 `;
 
 export async function POST(request: NextRequest) {
