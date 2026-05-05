@@ -18,6 +18,7 @@ CRITICAL RULES:
 - Make it responsive and polished.
 - Do NOT use any build tools, npm, React, or frameworks.
 - Everything must work by simply opening index.html in a browser.
+- NEVER ask the user to provide text copy. Generate realistic placeholder content (e.g. realistic names, descriptions, articles) yourself!
 
 Output format: Return JSON exactly matching this schema:
 {
@@ -46,6 +47,7 @@ CRITICAL RULES:
 - Return the COMPLETE contents of the files you modify (and any new ones). You do not need to return files that haven't changed, but it's safe to return all files if unsure.
 - The app must remain FULLY FUNCTIONAL.
 - Do NOT use any build tools, npm, React, or frameworks.
+- NEVER ask the user to provide text copy. Generate realistic placeholder content yourself!
 - The explanation must be in Icelandic and describe briefly what changed.
 
 Output format: Return JSON exactly matching this schema:
