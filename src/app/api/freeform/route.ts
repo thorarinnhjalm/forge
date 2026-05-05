@@ -2,12 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { generateJson, MODELS } from "@/lib/gemini/client";
 import { AgentSandboxClient } from "@/lib/sandbox/client";
 
-const FREEFORM_PROMPT = (description: string) => `
-You are Forge AI, a code generation engine. The user wants to build the following:
+const FREEFORM_PROMPT = (description: string, history: any[]) => `
+You are Forge AI, a code generation engine. The user wants to build a web application based on this conversation:
 
-"${description}"
+Chat History (Requirements):
+${history.map(m => `${m.role === 'user' ? 'User' : 'Forge'}: ${m.content}`).join('\n')}
 
-Generate a COMPLETE, working web application using vanilla HTML, CSS, and JavaScript.
+Generate a COMPLETE, working web application using vanilla HTML, CSS, and JavaScript based on the user's latest request and all previously agreed-upon details in the history.
 
 CRITICAL RULES:
 - Create an index.html that is the entry point.
@@ -73,7 +74,7 @@ export async function POST(request: NextRequest) {
     // 1. Ask Gemini to generate the app
     const prompt = isIterative 
       ? ITERATIVE_PROMPT(description, currentFiles, history)
-      : FREEFORM_PROMPT(description);
+      : FREEFORM_PROMPT(description, history);
 
     const codePayload = await generateJson(prompt, undefined, MODELS.FLASH);
 
