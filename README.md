@@ -44,8 +44,39 @@ npm run dev
 ```
 Open `http://localhost:3000/is/freeform` to start building!
 
-## Vercel Deployment
+## Vercel Deployment & Production Setup
 
-When deploying to Vercel, ensure you add all the environment variables listed above in the Vercel Dashboard under **Settings > Environment Variables**.
+Þegar þú setur appið upp á Vercel þarftu að passa upp á nokkra mikilvæga hluti til að allt virki (E2B sandkassar, Firebase Auth og GitHub Export).
 
-**Note:** Do NOT upload the Firebase Service Account JSON file. Instead, strictly rely on `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, and `FIREBASE_PRIVATE_KEY` for Admin initialization.
+### 1. Umhverfisbreytur (Environment Variables)
+Farðu í **Settings > Environment Variables** í Vercel og settu inn eftirfarandi:
+
+**Core:**
+- `GEMINI_API_KEY`
+- `E2B_API_KEY`
+
+**Firebase Admin (fyrir gagnagrunn):**
+> ⚠️ **MIKILVÆGT:** Ekki uploada `.json` skránni á Vercel eða GitHub. Vercel á bara að fá innihaldið úr henni í gegnum þessar breytur:
+- `FIREBASE_PROJECT_ID` (t.d. spark-15dfd)
+- `FIREBASE_CLIENT_EMAIL` (t.d. firebase-adminsdk-fbsvc@spark-15dfd.iam.gserviceaccount.com)
+- `FIREBASE_PRIVATE_KEY` (Líma allan lykilinn nákvæmlega eins og hann er í skránni, byrjar á `-----BEGIN PRIVATE KEY-----` og endar á `\n-----END PRIVATE KEY-----\n`)
+
+**GitHub Export (til að "Ýta á GitHub" takkinn virki):**
+1. Búðu til **OAuth App** á GitHub (Developer Settings -> OAuth Apps -> New).
+2. Setja "Homepage URL" sem `https://tryforge.tech`.
+3. Setja "Authorization callback URL" sem `https://spark-15dfd.firebaseapp.com/__/auth/handler`.
+4. Afrita Client ID og Client Secret og setja inn í bæði Firebase Auth (Sign-in providers -> GitHub) OG í Vercel umhverfisbreytur:
+- `GITHUB_CLIENT_ID`
+- `GITHUB_CLIENT_SECRET`
+
+### 2. Cron Job fyrir Sandkassa (Valfrjálst en mælt með)
+Til að drepa sandkassa sem gleyma að loka sér, geturðu notað Vercel Cron Jobs. Búðu til `vercel.json` í rótinni með:
+```json
+{
+  "crons": [{
+    "path": "/api/cron/cleanup",
+    "schedule": "0 * * * *"
+  }]
+}
+```
+Mundu þá að setja `CRON_SECRET` í umhverfisbreytur líka.

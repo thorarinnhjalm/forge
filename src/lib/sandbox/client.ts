@@ -55,22 +55,15 @@ export class AgentSandboxClient {
         codeFiles.map((f) => ({ path: f.path, data: f.content }))
       );
 
-      // Install serve and start it in the background
-      const installResult = await this.sandbox.commands.run('npm install -g serve', {
-        timeoutMs: 30_000,
-        onStdout: (data) => console.log(`[sandbox:${this.sessionId}]`, data),
-        onStderr: (data) => console.error(`[sandbox:${this.sessionId}]`, data),
-      });
-
-      // Start serve in background (don't await - it runs forever)
-      this.sandbox.commands.run('serve -s . -l 3000', {
+      // Start simple python HTTP server in background (don't await - it runs forever)
+      this.sandbox.commands.run('python3 -m http.server 3000', {
         timeoutMs: 300_000, // 5 min max
         onStdout: (data) => console.log(`[sandbox:${this.sessionId}]`, data),
         onStderr: (data) => console.error(`[sandbox:${this.sessionId}]`, data),
       }).catch(() => {}); // Fire and forget
 
-      // Give serve a moment to start
-      await new Promise((resolve) => setTimeout(resolve, 3000));
+      // Give python server a moment to start
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
       const previewUrl = `https://${this.sandbox.getHost(3000)}`;
       console.log(`[sandbox:${this.sessionId}] Preview URL: ${previewUrl}`);

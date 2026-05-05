@@ -1,172 +1,312 @@
 "use client";
 
-import { useTranslations } from "next-intl";
-import Link from "next/link";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { setupAuthListener, signOut } from "@/lib/firebase/auth";
+import { User } from "firebase/auth";
+import { collection, query, where, getDocs } from "firebase/firestore";
+import { db } from "@/lib/firebase/firebaseConfig";
+import Link from "next/link";
+
+type SessionDoc = {
+  id: string;
+  messages: any[];
+  sandboxId?: string;
+  updatedAt?: any;
+};
 
 export default function DashboardPage() {
-  const t = useTranslations("Dashboard");
+  const [user, setUser] = useState<User | null>(null);
+  const [credits, setCredits] = useState<number | null>(null);
+  const [sessions, setSessions] = useState<SessionDoc[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
 
-  // Mock data
-  const projects = [
-    { id: "1", name: "Búðarlisti", status: "deployed", progress: 100, url: "https://budarlisti.forge.app" },
-    { id: "2", name: "Bókunarform", status: "building", progress: 60, url: null }
-  ];
+  useEffect(() => {
+    const unsubscribe = setupAuthListener(async (u) => {
+      if (!u) {
+        router.push("/is/login");
+        return;
+      }
+      setUser(u);
+
+      try {
+        // Init user and get credits
+        const res = await fetch("/api/users/init", { method: "POST" });
+        const data = await res.json();
+        if (data.success) {
+          setCredits(data.credits);
+        }
+
+        // Fetch sessions
+        const q = query(
+          collection(db, "forge_freeform_sessions"),
+          where("userId", "==", u.uid)
+        );
+        const querySnapshot = await getDocs(q);
+        const fetchedSessions: SessionDoc[] = [];
+        querySnapshot.forEach((doc) => {
+          fetchedSessions.push({ id: doc.id, ...doc.data() } as SessionDoc);
+        });
+
+        // Sort by updatedAt descending
+        fetchedSessions.sort((a, b) => {
+          const timeA = a.updatedAt?.toMillis?.() || 0;
+          const timeB = b.updatedAt?.toMillis?.() || 0;
+          return timeB - timeA;
+        });
+
+        setSessions(fetchedSessions);
+      } catch (err) {
+        console.error("Failed to load dashboard data:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    });
+
+    return () => unsubscribe();
+  }, [router]);
+
+  const handleSignOut = async () => {
+    await signOut();
+    router.push("/is/login");
+  };
+
+  if (isLoading) {
+    return (
+      <div className="dashboard-layout">
+        <div className="spinner" />
+        <style jsx>{`
+          .dashboard-layout { min-height: 100vh; background: #0a0a1a; display: flex; align-items: center; justify-content: center; }
+          .spinner { width: 40px; height: 40px; border: 4px solid #6c5ce7; border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite; }
+          @keyframes spin { to { transform: rotate(360deg); } }
+        `}</style>
+      </div>
+    );
+  }
 
   return (
     <div className="dashboard-layout">
       <aside className="sidebar glass-panel">
         <div className="logo">Forge</div>
         <nav>
-          <Link href="/dashboard" className="active">{t("myProjects")}</Link>
-          <Link href="/settings">{t("settings")}</Link>
+          <Link href="/is/dashboard" className="active">Mín Verkefni</Link>
         </nav>
         
         <div className="credits-widget">
-          <h4>{t("creditsRemaining")}</h4>
+          <h4>Inneign (Credits)</h4>
           <div className="gauge">
-            <div className="gauge-fill" style={{ width: "85%" }}></div>
+            <div className="gauge-fill" style={{ width: credits ? Math.min(100, (credits/500)*100) + '%' : '0%' }}></div>
           </div>
-          <p>425 / 500</p>
+          <p>{credits !== null ? credits : "..."} / 500</p>
         </div>
+
+        <button className="logout-btn" onClick={handleSignOut}>Útskrá</button>
       </aside>
 
-      <main className="dashboard-content">
+      <main className="dash-main">
         <header className="dash-header">
-          <h1>{t("welcome")}</h1>
-          <button 
-            className="cta-button"
-            onClick={async () => {
-              const res = await fetch('/api/sessions', { 
-                method: 'POST', 
-                body: JSON.stringify({ projectId: 'shopping-list', userId: 'test-user-123' }),
-                headers: { 'Content-Type': 'application/json' }
-              });
-              const data = await res.json();
-              if (data.sessionId) {
-                router.push(`/en/session/${data.sessionId}`);
-              }
-            }}
-          >
-            Byrja Búðarlista (Test)
-          </button>
+          <h1>Velkomin(n), {user?.email}</h1>
+          <Link href="/is/freeform" className="cta-button" style={{ textDecoration: 'none' }}>
+            + Nýtt Verkefni
+          </Link>
         </header>
 
-        <section className="projects-grid">
-          {projects.map(p => (
-            <div key={p.id} className="card project-card">
-              <div className="status-badge" data-status={p.status}>
-                {t(`status_${p.status}`)}
-              </div>
-              <h3>{p.name}</h3>
-              <div className="progress-bar">
-                <div className="progress-fill" style={{ width: `${p.progress}%` }}></div>
-              </div>
-              {p.url && <a href={p.url} target="_blank" rel="noopener noreferrer">{t("viewLive")}</a>}
-              {!p.url && <Link href={`/session/${p.id}`} className="continue-link">{t("continueBuilding")}</Link>}
-            </div>
-          ))}
-        </section>
+        {sessions.length === 0 ? (
+          <div className="empty-state">
+            <p>Engin verkefni fundust. Smelltu á "Nýtt Verkefni" til að byrja!</p>
+          </div>
+        ) : (
+          <section className="projects-grid">
+            {sessions.map((session) => {
+              const firstUserMsg = session.messages?.find((m) => m.role === "user");
+              let title = firstUserMsg?.content || "Ónefnt verkefni";
+              if (title.length > 50) title = title.substring(0, 50) + "...";
+              
+              const dateStr = session.updatedAt?.toDate?.().toLocaleDateString("is-IS", {
+                year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute:'2-digit'
+              }) || "Nýlega";
+
+              return (
+                <div key={session.id} className="card project-card">
+                  <h3>{title}</h3>
+                  <div className="card-footer" style={{ marginTop: 'auto', paddingTop: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '0.8rem', color: '#888' }}>🗓️ {dateStr}</span>
+                    <Link href={`/is/freeform?session=${session.id}`} className="continue-link">
+                      Halda áfram
+                    </Link>
+                  </div>
+                </div>
+              );
+            })}
+          </section>
+        )}
       </main>
 
       <style jsx>{`
         .dashboard-layout {
           display: flex;
           height: 100vh;
+          background: #0a0a1a;
+          color: #e0e0e0;
+          font-family: 'Inter', sans-serif;
         }
         .sidebar {
           width: 250px;
-          padding: var(--space-4);
+          padding: 2rem;
           display: flex;
           flex-direction: column;
-          border-right: 1px solid var(--color-border);
+          border-right: 1px solid #222;
+          background: #111122;
         }
         .logo {
           font-size: 1.5rem;
           font-weight: bold;
-          color: var(--color-accent);
-          margin-bottom: var(--space-6);
+          background: linear-gradient(135deg, #6c5ce7, #a29bfe);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          margin-bottom: 3rem;
         }
         nav {
           display: flex;
           flex-direction: column;
-          gap: var(--space-2);
+          gap: 1rem;
           flex: 1;
         }
         nav a {
-          padding: var(--space-2) var(--space-3);
-          border-radius: var(--radius-md);
-          color: var(--color-text-secondary);
+          padding: 0.8rem 1rem;
+          border-radius: 8px;
+          color: #888;
+          text-decoration: none;
+          transition: all 0.2s;
+        }
+        nav a:hover {
+          background: rgba(108, 92, 231, 0.05);
+          color: #e0e0e0;
         }
         nav a.active {
           background: rgba(108, 92, 231, 0.1);
-          color: var(--color-accent);
+          color: #a29bfe;
           font-weight: 500;
         }
         .credits-widget {
           margin-top: auto;
-          background: var(--color-surface);
-          padding: var(--space-3);
-          border-radius: var(--radius-md);
-          border: 1px solid var(--color-border);
+          background: #1a1a2e;
+          padding: 1.2rem;
+          border-radius: 12px;
+          border: 1px solid #333;
+          margin-bottom: 1rem;
+        }
+        .credits-widget h4 {
+          margin: 0 0 0.5rem 0;
+          font-size: 0.9rem;
+          color: #a29bfe;
         }
         .gauge {
           height: 6px;
-          background: var(--color-surface-raised);
-          border-radius: var(--radius-full);
-          margin: var(--space-2) 0;
+          background: #0a0a1a;
+          border-radius: 10px;
+          margin: 0.8rem 0;
           overflow: hidden;
         }
         .gauge-fill {
           height: 100%;
-          background: var(--color-warm);
+          background: #6c5ce7;
+          transition: width 0.5s ease;
         }
-        .dashboard-content {
+        .credits-widget p {
+          margin: 0;
+          font-size: 0.8rem;
+          color: #888;
+        }
+        .logout-btn {
+          background: transparent;
+          border: 1px solid #444;
+          color: #888;
+          padding: 0.8rem;
+          border-radius: 8px;
+          cursor: pointer;
+          transition: all 0.2s;
+          font-weight: 600;
+        }
+        .logout-btn:hover {
+          background: #ff4757;
+          color: white;
+          border-color: #ff4757;
+        }
+
+        .dash-main {
           flex: 1;
-          padding: var(--space-6);
+          padding: 3rem;
           overflow-y: auto;
         }
         .dash-header {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          margin-bottom: var(--space-6);
+          margin-bottom: 3rem;
+        }
+        .dash-header h1 {
+          font-size: 1.8rem;
+          margin: 0;
+        }
+        .cta-button {
+          background: #6c5ce7;
+          color: white;
+          padding: 0.8rem 1.5rem;
+          border-radius: 8px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: transform 0.2s;
+        }
+        .cta-button:hover {
+          transform: translateY(-2px);
+          background: #5f27cd;
+        }
+        .empty-state {
+          text-align: center;
+          padding: 5rem;
+          background: #111122;
+          border-radius: 16px;
+          border: 1px dashed #333;
+          color: #888;
         }
         .projects-grid {
           display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-          gap: var(--space-4);
+          grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+          gap: 1.5rem;
         }
         .project-card {
-          position: relative;
+          background: #111122;
+          border: 1px solid #222;
+          border-radius: 12px;
+          padding: 1.5rem;
+          display: flex;
+          flex-direction: column;
+          min-height: 150px;
+          transition: border-color 0.2s, transform 0.2s;
         }
-        .status-badge {
-          position: absolute;
-          top: 1rem;
-          right: 1rem;
-          font-size: 0.75rem;
-          padding: 2px 8px;
-          border-radius: var(--radius-full);
+        .project-card:hover {
+          border-color: #6c5ce7;
+          transform: translateY(-2px);
         }
-        .status-badge[data-status="deployed"] {
-          background: rgba(46, 213, 115, 0.2);
-          color: var(--color-success);
+        .project-card h3 {
+          margin: 0 0 1rem 0;
+          font-size: 1.1rem;
+          line-height: 1.4;
         }
-        .status-badge[data-status="building"] {
-          background: rgba(255, 165, 2, 0.2);
-          color: var(--color-warm);
+        .continue-link {
+          background: rgba(108, 92, 231, 0.1);
+          color: #a29bfe;
+          padding: 0.5rem 1rem;
+          border-radius: 6px;
+          text-decoration: none;
+          font-size: 0.85rem;
+          font-weight: 600;
+          transition: background 0.2s;
         }
-        .progress-bar {
-          height: 4px;
-          background: var(--color-surface-raised);
-          border-radius: var(--radius-full);
-          margin: var(--space-3) 0;
-          overflow: hidden;
-        }
-        .progress-fill {
-          height: 100%;
-          background: var(--color-accent);
+        .continue-link:hover {
+          background: rgba(108, 92, 231, 0.3);
         }
       `}</style>
     </div>

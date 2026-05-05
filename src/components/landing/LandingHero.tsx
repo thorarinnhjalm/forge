@@ -88,7 +88,7 @@ export default function LandingHero({ title, description, ctaText }: LandingHero
         <div className="hero-actions">
           <button 
             className="cta-button" 
-            onClick={() => setIsWaitlistModalOpen(true)}
+            onClick={() => router.push(`/${locale}/freeform`)}
           >
             {ctaText}
           </button>

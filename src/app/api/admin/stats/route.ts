@@ -1,0 +1,68 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { adminDb, adminAuth } from '@/lib/firebase/firebaseAdmin';
+
+const ADMIN_EMAIL = "thorarinnhjalmarsson@gmail.com";
+
+export async function GET(request: NextRequest) {
+  try {
+    const sessionCookie = request.cookies.get('session')?.value;
+    if (!sessionCookie) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    
+    const decodedClaims = await adminAuth.verifySessionCookie(sessionCookie);
+    const uid = decodedClaims.uid;
+    const userRecord = await adminAuth.getUser(uid);
+
+    if (userRecord.email !== ADMIN_EMAIL) {
+      return NextResponse.json({ error: 'Forbidden: Admins only' }, { status: 403 });
+    }
+
+    // Sækja alla notendur
+    const usersSnapshot = await adminDb.collection('forge_users').get();
+    const users: any[] = [];
+    usersSnapshot.forEach(doc => {
+      users.push({ id: doc.id, ...doc.data() });
+    });
+
+    // Sækja öll verkefni (sessions)
+    const sessionsSnapshot = await adminDb.collection('forge_freeform_sessions').get();
+    const sessions: any[] = [];
+    sessionsSnapshot.forEach(doc => {
+      const data = doc.data();
+      // Við viljum ekki senda allan kóðann og heila sögu ef hún er stór til baka í admin yfirlitið,
+      // heldur bara meta gögn.
+      const firstMessage = data.messages?.find((m: any) => m.role === "user")?.content || "Ónefnt";
+      
+      sessions.push({
+        id: doc.id,
+        userId: data.userId,
+        sandboxId: data.sandboxId,
+        updatedAt: data.updatedAt,
+        title: firstMessage.substring(0, 80) + (firstMessage.length > 80 ? "..." : ""),
+        messageCount: data.messages?.length || 0
+      });
+    });
+
+    // Raða sessions eftir nýjast fyrst
+    sessions.sort((a, b) => {
+      const timeA = a.updatedAt?._seconds || 0;
+      const timeB = b.updatedAt?._seconds || 0;
+      return timeB - timeA;
+    });
+
+    return NextResponse.json({ 
+      success: true, 
+      users,
+      sessions,
+      metrics: {
+        totalUsers: users.length,
+        totalSessions: sessions.length
+      }
+    });
+
+  } catch (error) {
+    console.error('Admin API error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}

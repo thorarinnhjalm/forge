@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, Suspense } from "react";
 import { setupAuthListener } from "@/lib/firebase/auth";
-import { User } from "firebase/auth";
-import { doc, setDoc, serverTimestamp } from "firebase/firestore";
-import { db } from "@/lib/firebase/firebaseConfig";
+import { User, GithubAuthProvider, signInWithPopup, linkWithPopup } from "firebase/auth";
+import { doc, setDoc, serverTimestamp, getDoc } from "firebase/firestore";
+import { db, auth } from "@/lib/firebase/firebaseConfig";
+import { useSearchParams } from "next/navigation";
 
 const TIPS = [
   "Gervigreindin er að skrifa HTML, CSS og JavaScript kóðann...",
@@ -25,9 +26,21 @@ type Message = {
   role: "user" | "forge";
   content: string;
   options?: Option[];
+  conceptTags?: string[];
 };
 
 export default function FreeformPage() {
+  return (
+    <Suspense fallback={<div className="freeform-layout"><div className="spinner" /></div>}>
+      <FreeformContent />
+    </Suspense>
+  );
+}
+
+function FreeformContent() {
+  const searchParams = useSearchParams();
+  const sessionParam = searchParams.get("session");
+
   const [description, setDescription] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [isBuilding, setIsBuilding] = useState(false);
@@ -37,19 +50,54 @@ export default function FreeformPage() {
   const [currentFiles, setCurrentFiles] = useState<any[] | null>(null);
   const [sandboxId, setSandboxId] = useState<string | null>(null);
   
+  const [activeView, setActiveView] = useState<"preview" | "code">("preview");
+  const [selectedFile, setSelectedFile] = useState<string | null>(null);
+
   const [error, setError] = useState<string | null>(null);
   const [tipIndex, setTipIndex] = useState(0);
 
   const [user, setUser] = useState<User | null>(null);
   const [sessionId, setSessionId] = useState<string>("");
 
+  // Github Export State
+  const [showGithubModal, setShowGithubModal] = useState(false);
+  const [githubToken, setGithubToken] = useState("");
+  const [githubRepoName, setGithubRepoName] = useState("");
+  const [isExporting, setIsExporting] = useState(false);
+  const [githubExportSuccess, setGithubExportSuccess] = useState<string | null>(null);
+
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    setSessionId(Date.now().toString(36) + Math.random().toString(36).substring(2));
+    if (sessionParam) {
+      setSessionId(sessionParam);
+      // Fetch session from Firestore
+      const loadSession = async () => {
+        try {
+          const docRef = doc(db, "forge_freeform_sessions", sessionParam);
+          const docSnap = await getDoc(docRef);
+          if (docSnap.exists()) {
+            const data = docSnap.data();
+            if (data.messages) setMessages(data.messages);
+            if (data.currentFiles) setCurrentFiles(data.currentFiles);
+            if (data.sandboxId) {
+              setSandboxId(data.sandboxId);
+              // Construct the preview URL assuming the standard e2b format
+              setPreviewUrl(`https://${data.sandboxId}-8000.e2b.dev`);
+            }
+          }
+        } catch (e) {
+          console.error("Failed to load session:", e);
+        }
+      };
+      loadSession();
+    } else {
+      setSessionId(Date.now().toString(36) + Math.random().toString(36).substring(2));
+    }
+
     const unsubscribe = setupAuthListener((u) => setUser(u));
     return () => unsubscribe();
-  }, []);
+  }, [sessionParam]);
 
   useEffect(() => {
     if (!user || !sessionId || messages.length === 0) return;
@@ -185,7 +233,14 @@ export default function FreeformPage() {
         
         // Add Forge's explanation to chat
         if (data.explanation) {
-          setMessages((prev) => [...prev, { role: "forge", content: data.explanation }]);
+          setMessages((prev) => [
+            ...prev, 
+            { 
+              role: "forge", 
+              content: data.explanation,
+              conceptTags: data.conceptTags 
+            }
+          ]);
         }
       } else {
         setError(data.error || "Villa við að búa til appið.");
@@ -202,6 +257,74 @@ export default function FreeformPage() {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       processUserInput(description);
+    }
+  };
+
+  const handleConnectGithub = async () => {
+    try {
+      const provider = new GithubAuthProvider();
+      provider.addScope('repo'); // Nauðsynlegt til að búa til og ýta í repository
+      
+      let result;
+      // Tengja við núverandi account ef user er innskráður annars bara popup login
+      if (user) {
+        result = await linkWithPopup(user, provider).catch(async (error) => {
+          // Ef fólk hefur áður skráð sig inn með GitHub beint, getur linkWithPopup failað
+          // (t.d. "credential-already-in-use"). Þá gerum við bara signInWithPopup.
+          if (error.code === 'auth/credential-already-in-use') {
+            return await signInWithPopup(auth, provider);
+          }
+          throw error;
+        });
+      } else {
+        result = await signInWithPopup(auth, provider);
+      }
+      
+      const credential = GithubAuthProvider.credentialFromResult(result);
+      if (credential?.accessToken) {
+        setGithubToken(credential.accessToken);
+      } else {
+        setError("Fékk engan token frá GitHub.");
+      }
+    } catch (error: any) {
+      console.error("Github auth error", error);
+      // Ef notandinn lokar glugganum áður en hann klárar ignorum við það
+      if (error.code !== 'auth/popup-closed-by-user') {
+        setError("Gat ekki tengst GitHub: " + error.message);
+      }
+    }
+  };
+
+  const handleGithubExport = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!githubToken || !githubRepoName || !currentFiles) return;
+
+    setIsExporting(true);
+    setGithubExportSuccess(null);
+    setError(null);
+
+    try {
+      const res = await fetch("/api/export/github", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          githubToken,
+          repoName: githubRepoName,
+          files: currentFiles,
+          description: messages.find(m => m.role === 'user')?.content
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        setGithubExportSuccess(data.url);
+      } else {
+        setError(data.error || "Gat ekki deilt á GitHub");
+      }
+    } catch (err) {
+      setError("Villa kom upp við að tengjast GitHub");
+    } finally {
+      setIsExporting(false);
     }
   };
 
@@ -266,6 +389,15 @@ export default function FreeformPage() {
                     </div>
                   )}
 
+                  {/* Concept Tags */}
+                  {msg.conceptTags && msg.conceptTags.length > 0 && (
+                    <div className="concept-tags">
+                      {msg.conceptTags.map(tag => (
+                        <span key={tag} className="concept-tag">{tag}</span>
+                      ))}
+                    </div>
+                  )}
+
                   {/* Why button for forge messages */}
                   {idx === messages.length - 1 && msg.role === "forge" && !isBusy && sandboxId && !msg.options && (
                     <button 
@@ -322,32 +454,147 @@ export default function FreeformPage() {
 
         {/* Right: Preview Panel */}
         <section className="preview-panel">
-          <div className="browser-frame">
-            <div className="browser-header">
-              <div className="dots">
-                <span /><span /><span />
+          <div className="panel-tabs">
+            <div style={{ display: 'flex' }}>
+              <button 
+                className={activeView === "preview" ? "active" : ""} 
+                onClick={() => setActiveView("preview")}
+              >
+                👀 Forsýning
+              </button>
+              <button 
+                className={activeView === "code" ? "active" : ""} 
+                onClick={() => setActiveView("code")}
+              >
+                💻 Kóði
+              </button>
+            </div>
+            {sandboxId && currentFiles && (
+              <button 
+                className="github-btn"
+                onClick={() => setShowGithubModal(true)}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+                Birta appið
+              </button>
+            )}
+          </div>
+
+          {activeView === "preview" ? (
+            <div className="browser-frame">
+              <div className="browser-header">
+                <div className="dots">
+                  <span /><span /><span />
+                </div>
+                <div className="url-bar">
+                  {previewUrl ? previewUrl.split('?')[0] : "appið þitt birtist hér"}
+                </div>
               </div>
-              <div className="url-bar">
-                {previewUrl ? previewUrl.split('?')[0] : "appið þitt birtist hér"}
+              <div className="browser-content">
+                {previewUrl ? (
+                  <iframe
+                    src={previewUrl}
+                    style={{ width: "100%", height: "100%", border: "none" }}
+                    title="App Preview"
+                  />
+                ) : (
+                  <div className="placeholder">
+                    <div className="placeholder-icon">🚀</div>
+                    <p>Skrifaðu lýsingu og ýttu á senda til að byrja</p>
+                  </div>
+                )}
               </div>
             </div>
-            <div className="browser-content">
-              {previewUrl ? (
-                <iframe
-                  src={previewUrl}
-                  style={{ width: "100%", height: "100%", border: "none" }}
-                  title="App Preview"
-                />
+          ) : (
+            <div className="code-frame">
+              {currentFiles && currentFiles.length > 0 ? (
+                <>
+                  <div className="file-tabs">
+                    {currentFiles.map(f => (
+                      <button 
+                        key={f.path}
+                        className={selectedFile === f.path || (!selectedFile && f.path === currentFiles[0].path) ? "active" : ""}
+                        onClick={() => setSelectedFile(f.path)}
+                      >
+                        {f.path}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="code-content">
+                    <pre>
+                      <code>
+                        {currentFiles.find(f => f.path === (selectedFile || currentFiles[0].path))?.content || ""}
+                      </code>
+                    </pre>
+                  </div>
+                </>
               ) : (
                 <div className="placeholder">
-                  <div className="placeholder-icon">🚀</div>
-                  <p>Skrifaðu lýsingu og ýttu á senda til að byrja</p>
+                  <div className="placeholder-icon">💻</div>
+                  <p>Enginn kóði hefur verið smíðaður ennþá</p>
                 </div>
               )}
             </div>
-          </div>
+          )}
         </section>
       </div>
+
+      {/* Publish / GitHub Export Modal */}
+      {showGithubModal && (
+        <div className="modal-overlay" onClick={() => setShowGithubModal(false)}>
+          <div className="modal-content card" onClick={e => e.stopPropagation()}>
+            <button className="close-btn" onClick={() => setShowGithubModal(false)}>×</button>
+            <h2>Birta appið á netinu</h2>
+            
+            {githubExportSuccess ? (
+              <div className="success-content">
+                <p>Verkefnið er komið á GitHub!</p>
+                <a href={githubExportSuccess} target="_blank" rel="noreferrer" className="cta-button">Skoða Repository</a>
+                <div style={{ marginTop: '1.5rem', background: 'rgba(108, 92, 231, 0.1)', padding: '1rem', borderRadius: '8px', border: '1px solid rgba(108, 92, 231, 0.3)'}}>
+                  <h4 style={{ color: '#a29bfe', marginBottom: '0.5rem' }}>Næsta skref: Vercel 🚀</h4>
+                  <p style={{ fontSize: '0.9rem', color: '#ccc', lineHeight: '1.5' }}>
+                    Til að fá alvöru vefslóð (.com) sem allir geta skoðað:<br/><br/>
+                    1. Farðu inn á <a href="https://vercel.com" target="_blank" rel="noreferrer" style={{color: '#a29bfe'}}>Vercel.com</a><br/>
+                    2. Skráðu þig inn með GitHub aðganginum þínum.<br/>
+                    3. Ýttu á <strong>"Add New Project"</strong>.<br/>
+                    4. Veldu repo-ið sem þú varst að búa til og ýttu á <strong>"Deploy"</strong>.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <form onSubmit={handleGithubExport} className="github-form">
+                <p style={{ lineHeight: '1.5', color: '#ccc' }}>Til að setja appið þitt frítt á netið notum við tvö frábær tól: <strong>GitHub</strong> (geymir kóðann) og <strong>Vercel</strong> (birtir kóðann).</p>
+                
+                {githubToken ? (
+                  <>
+                    <div className="form-group" style={{ marginTop: '1rem' }}>
+                      <label>Skref 1: Vista kóðann á GitHub</label>
+                      <input 
+                        type="text" 
+                        required 
+                        placeholder="Nafn á vefnum (t.d. mitt-fyrsta-app)"
+                        value={githubRepoName}
+                        onChange={e => setGithubRepoName(e.target.value)}
+                      />
+                    </div>
+                    <button type="submit" className="cta-button" disabled={isExporting}>
+                      {isExporting ? "Ert að ýta..." : "Búa til Repo á GitHub"}
+                    </button>
+                  </>
+                ) : (
+                  <div className="github-connect" style={{ marginTop: '1.5rem', background: '#1a1a2e', padding: '1.5rem', borderRadius: '8px', border: '1px solid #333' }}>
+                    <p style={{fontSize: "0.95rem", color: "#eee", marginBottom: "1rem"}}>Tengdu GitHub aðganginn þinn til að byrja.</p>
+                    <button type="button" className="cta-button" onClick={handleConnectGithub} style={{ width: '100%' }}>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style={{marginRight: "8px"}}><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+                      Tengjast við GitHub
+                    </button>
+                  </div>
+                )}
+              </form>
+            )}
+          </div>
+        </div>
+      )}
 
       <style jsx>{`
         .freeform-layout {
@@ -401,6 +648,24 @@ export default function FreeformPage() {
           display: flex;
           flex-direction: column;
           gap: 1rem;
+        }
+
+        .concept-tags {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 0.5rem;
+          margin-top: 0.8rem;
+          padding-top: 0.8rem;
+          border-top: 1px solid rgba(255,255,255,0.05);
+        }
+        .concept-tag {
+          background: rgba(108, 92, 231, 0.2);
+          color: #a29bfe;
+          padding: 0.2rem 0.6rem;
+          border-radius: 4px;
+          font-size: 0.75rem;
+          font-family: monospace;
+          border: 1px solid rgba(108, 92, 231, 0.4);
         }
 
         .empty-chat {
@@ -630,16 +895,61 @@ export default function FreeformPage() {
         .preview-panel {
           flex: 1;
           display: flex;
+          flex-direction: column;
+          background: #111122;
+          border-radius: 12px;
+          border: 1px solid #333;
+          overflow: hidden;
         }
 
-        .browser-frame {
+        .panel-tabs {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          background: #0a0a1a;
+          border-bottom: 1px solid #222;
+          padding: 0.5rem 1rem 0;
+        }
+        .panel-tabs button {
+          background: transparent;
+          border: none;
+          color: #888;
+          padding: 0.8rem 1.5rem;
+          font-size: 0.95rem;
+          font-weight: 500;
+          cursor: pointer;
+          border-bottom: 2px solid transparent;
+          transition: all 0.2s;
+        }
+        .panel-tabs button:hover {
+          color: #e0e0e0;
+        }
+        .panel-tabs button.active {
+          color: #a29bfe;
+          border-bottom-color: #6c5ce7;
+        }
+
+        .github-btn {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          background: #24292e !important;
+          color: white !important;
+          border: 1px solid #1b1f23 !important;
+          border-radius: 6px;
+          padding: 0.4rem 0.8rem !important;
+          font-size: 0.85rem !important;
+          margin-bottom: 0.5rem;
+        }
+        .github-btn:hover {
+          background: #2f363d !important;
+        }
+
+        .browser-frame, .code-frame {
           flex: 1;
           display: flex;
           flex-direction: column;
-          border-radius: 12px;
           overflow: hidden;
-          border: 1px solid #333;
-          background: #111;
         }
 
         .browser-header {
@@ -682,6 +992,49 @@ export default function FreeformPage() {
           background: #fff;
         }
 
+        /* Code Window CSS */
+        .file-tabs {
+          display: flex;
+          background: #1a1a2e;
+          border-bottom: 1px solid #222;
+          overflow-x: auto;
+        }
+        .file-tabs button {
+          background: transparent;
+          border: none;
+          color: #888;
+          padding: 0.6rem 1.2rem;
+          font-family: monospace;
+          font-size: 0.85rem;
+          cursor: pointer;
+          border-right: 1px solid #222;
+          transition: all 0.2s;
+        }
+        .file-tabs button:hover {
+          background: #222233;
+          color: #ccc;
+        }
+        .file-tabs button.active {
+          background: #2d2d44;
+          color: #a29bfe;
+          border-top: 2px solid #6c5ce7;
+        }
+
+        .code-content {
+          flex: 1;
+          background: #0d0d16;
+          overflow: auto;
+          padding: 1.5rem;
+        }
+        .code-content pre {
+          margin: 0;
+          font-family: 'Fira Code', 'Courier New', Courier, monospace;
+          font-size: 0.9rem;
+          line-height: 1.5;
+          color: #e0e0e0;
+          white-space: pre-wrap;
+        }
+
         .placeholder {
           display: flex;
           flex-direction: column;
@@ -701,6 +1054,90 @@ export default function FreeformPage() {
         @keyframes fadeIn {
           from { opacity: 0; transform: translateY(10px); }
           to { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 1024px) {
+          .freeform-workspace {
+            flex-direction: column;
+            max-height: none;
+            height: auto;
+          }
+          .chat-panel {
+            width: 100%;
+            height: 50vh;
+            flex: none;
+          }
+          .preview-panel {
+            width: 100%;
+            height: 60vh;
+            flex: none;
+          }
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+          position: fixed;
+          top: 0; left: 0; right: 0; bottom: 0;
+          background: rgba(0, 0, 0, 0.7);
+          backdrop-filter: blur(4px);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 1000;
+        }
+        .modal-content {
+          position: relative;
+          width: 90%;
+          max-width: 400px;
+          background: #111122;
+          border: 1px solid #333;
+          border-radius: 12px;
+          padding: 2rem;
+          text-align: left;
+        }
+        .close-btn {
+          position: absolute;
+          top: 1rem;
+          right: 1rem;
+          background: none;
+          border: none;
+          font-size: 1.5rem;
+          color: #888;
+          cursor: pointer;
+        }
+        .github-form {
+          display: flex;
+          flex-direction: column;
+          gap: 1.2rem;
+          margin-top: 1rem;
+        }
+        .form-group {
+          display: flex;
+          flex-direction: column;
+          gap: 0.5rem;
+        }
+        .form-group label {
+          font-size: 0.9rem;
+          color: #ccc;
+        }
+        .form-group input {
+          background: #1a1a2e;
+          border: 1px solid #333;
+          padding: 0.8rem;
+          border-radius: 6px;
+          color: white;
+          font-family: monospace;
+        }
+        .form-group small {
+          color: #888;
+          font-size: 0.75rem;
+        }
+        .success-content {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 1.5rem;
+          margin-top: 1rem;
         }
       `}</style>
     </div>

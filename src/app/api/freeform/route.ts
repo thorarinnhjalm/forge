@@ -24,7 +24,8 @@ Output format: Return JSON exactly matching this schema:
   "files": [
     { "path": "string", "content": "string" }
   ],
-  "explanation": "Brief description of what was built, in Icelandic"
+  "explanation": "Brief description of what was built, in Icelandic",
+  "conceptTags": ["Tag 1", "Tag 2", "Tag 3"]
 }
 `;
 
@@ -52,7 +53,8 @@ Output format: Return JSON exactly matching this schema:
   "files": [
     { "path": "string", "content": "string" }
   ],
-  "explanation": "Brief description of what changed, in Icelandic"
+  "explanation": "Brief description of what changed, in Icelandic",
+  "conceptTags": ["Tag 1", "Tag 2", "Tag 3"]
 }
 `;
 
@@ -102,6 +104,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       explanation: codePayload.explanation,
+      conceptTags: codePayload.conceptTags || [],
       previewUrl: result.previewUrl,
       sandboxId: sandbox.sandboxId,
       files: finalFiles,
