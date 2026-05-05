@@ -108,16 +108,7 @@ function FreeformContent() {
     return () => unsubscribe();
   }, [sessionParam, router]);
 
-  if (isAuthLoading) {
-    return (
-      <div className="freeform-layout" style={{ justifyContent: 'center', alignItems: 'center' }}>
-        <div className="spinner" />
-      </div>
-    );
-  }
-
-  // Ef user er null, þá er redirectið í gangi
-  if (!user) return null;
+  // Færum auth checks alveg niður fyrir öll React Hooks til að forðast villur!
 
   useEffect(() => {
     if (!user || !sessionId || messages.length === 0) return;
@@ -349,6 +340,16 @@ function FreeformContent() {
   };
 
   const isBusy = isBuilding || isProbing;
+
+  if (isAuthLoading) {
+    return (
+      <div className="freeform-layout" style={{ justifyContent: 'center', alignItems: 'center' }}>
+        <div className="spinner" />
+      </div>
+    );
+  }
+
+  if (!user) return null;
 
   return (
     <div className="freeform-layout">
