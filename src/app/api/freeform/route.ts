@@ -14,12 +14,14 @@ Generate a COMPLETE, working web application using vanilla HTML, CSS, and JavaSc
 
 CRITICAL RULES:
 - Create an index.html that is the entry point.
-- Include all CSS inline in a <style> tag or in a separate style.css file.
-- Include all JavaScript inline in a <script> tag or in a separate app.js file.
+- You MUST import Tailwind CSS via CDN: <script src="https://cdn.tailwindcss.com"></script>
+- Use Tailwind CSS classes for ALL styling. Only write custom CSS for specific animations if needed.
+- Import a modern font from Google Fonts (e.g., 'Inter' or 'Outfit') and apply it.
+- Include icons using FontAwesome or Heroicons via CDN if needed.
 - The app must be FULLY FUNCTIONAL and look beautiful and modern.
-- Use a dark theme with vibrant accent colors.
-- Make it responsive and polished.
-- Do NOT use any build tools, npm, React, or frameworks.
+- Use a sleek design with premium aesthetics (glassmorphism, subtle shadows, smooth transitions, rounded corners).
+- Make it responsive and polished for all screen sizes.
+- Do NOT use npm, React, or frameworks that require build tools.
 - Everything must work by simply opening index.html in a browser.
 - NEVER ask the user to provide text copy. Generate realistic placeholder content (e.g. realistic names, descriptions, articles) yourself!
 
@@ -47,8 +49,9 @@ ${JSON.stringify(currentFiles, null, 2)}
 
 CRITICAL RULES:
 - Understand the user's request and update the necessary files.
+- Remember that the project uses Tailwind CSS via CDN. Continue using Tailwind for all new styling.
 - Return the COMPLETE contents of the files you modify (and any new ones). You do not need to return files that haven't changed, but it's safe to return all files if unsure.
-- The app must remain FULLY FUNCTIONAL.
+- The app must remain FULLY FUNCTIONAL and maintain a premium, modern aesthetic.
 - Do NOT use any build tools, npm, React, or frameworks.
 - NEVER ask the user to provide text copy. Generate realistic placeholder content yourself!
 - The explanation must be in Icelandic and describe briefly what changed.
