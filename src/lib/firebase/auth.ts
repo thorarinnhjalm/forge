@@ -68,6 +68,8 @@ export const setupAuthListener = (onUserChange: (user: User | null) => void) => 
         },
         body: JSON.stringify({ idToken: token }),
       });
+      // Tryggjum að notandi sé alltaf stofnaður í gagnagrunni með 500 inneign
+      await fetch('/api/users/init', { method: 'POST' }).catch(console.error);
     }
   });
 };
