@@ -63,9 +63,10 @@ export async function POST(request: NextRequest) {
     }
 
     if (tokensUsed > 0) {
+      const creditsToDeduct = Math.max(1, Math.ceil(tokensUsed / 1000));
       const userRef = adminDb.collection('forge_users').doc(uid);
       await userRef.update({
-        'credits.balance': FieldValue.increment(-tokensUsed),
+        'credits.balance': FieldValue.increment(-creditsToDeduct),
         'totalTokensUsed': FieldValue.increment(tokensUsed)
       }).catch(e => console.error("Failed to update tokens", e));
     }
