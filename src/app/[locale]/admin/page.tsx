@@ -11,6 +11,7 @@ type AdminStats = {
   metrics: {
     totalUsers: number;
     totalSessions: number;
+    totalTokens: number;
   }
 };
 
@@ -96,6 +97,10 @@ export default function AdminDashboard() {
             <h3>Heildarfjöldi Verkefna</h3>
             <div className="number">{stats?.metrics.totalSessions}</div>
           </div>
+          <div className="metric-card">
+            <h3>Heildar Tokens Notuð</h3>
+            <div className="number" style={{ color: "var(--color-accent)" }}>{stats?.metrics.totalTokens || 0}</div>
+          </div>
         </section>
 
         <div className="tables-grid">
@@ -107,6 +112,7 @@ export default function AdminDashboard() {
                   <tr>
                     <th>Netfang</th>
                     <th>Skráð(ur)</th>
+                    <th>Tokens Notuð</th>
                     <th>Inneign (Credits)</th>
                   </tr>
                 </thead>
@@ -115,6 +121,7 @@ export default function AdminDashboard() {
                     <tr key={u.id}>
                       <td>{u.email}</td>
                       <td>{u.createdAt?._seconds ? new Date(u.createdAt._seconds * 1000).toLocaleDateString() : 'Óþekkt'}</td>
+                      <td>{u.totalTokensUsed || 0}</td>
                       <td><span className="credit-badge">{u.credits?.balance ?? 0}</span></td>
                     </tr>
                   ))}

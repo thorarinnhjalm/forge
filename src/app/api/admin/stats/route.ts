@@ -37,8 +37,11 @@ export async function GET(request: NextRequest) {
     // Sækja alla notendur
     const usersSnapshot = await adminDb.collection('forge_users').get();
     const users: any[] = [];
+    let totalTokens = 0;
     usersSnapshot.forEach(doc => {
-      users.push({ id: doc.id, ...doc.data() });
+      const data = doc.data();
+      totalTokens += (data.totalTokensUsed || 0);
+      users.push({ id: doc.id, ...data });
     });
 
     // Sækja öll verkefni (sessions)
@@ -73,7 +76,8 @@ export async function GET(request: NextRequest) {
       sessions,
       metrics: {
         totalUsers: users.length,
-        totalSessions: sessions.length
+        totalSessions: sessions.length,
+        totalTokens: totalTokens
       }
     });
 

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateJson, MODELS } from "@/lib/gemini/client";
 import { AgentSandboxClient } from "@/lib/sandbox/client";
+import { adminAuth, adminDb } from "@/lib/firebase/firebaseAdmin";
+import { FieldValue } from "firebase-admin/firestore";
 
 const FREEFORM_PROMPT = (description: string, history: any[]) => `
 You are Forge AI, a code generation engine. The user wants to build a web application based on this conversation:
@@ -63,6 +65,13 @@ Output format: Return JSON exactly matching this schema:
 
 export async function POST(request: NextRequest) {
   try {
+    const sessionCookie = request.cookies.get('session')?.value;
+    if (!sessionCookie) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    const decodedClaims = await adminAuth.verifySessionCookie(sessionCookie);
+    const uid = decodedClaims.uid;
+
     const { description, sessionId, sandboxId, currentFiles, history = [] } = await request.json();
 
     if (!description) {
@@ -76,10 +85,18 @@ export async function POST(request: NextRequest) {
       ? ITERATIVE_PROMPT(description, currentFiles, history)
       : FREEFORM_PROMPT(description, history);
 
-    const codePayload = await generateJson(prompt, undefined, MODELS.FLASH);
+    const { data: codePayload, tokensUsed } = await generateJson(prompt, undefined, MODELS.FLASH);
 
     if (!codePayload?.files?.length) {
       return NextResponse.json({ error: "Gemini did not generate any files" }, { status: 500 });
+    }
+
+    if (tokensUsed > 0) {
+      const userRef = adminDb.collection('forge_users').doc(uid);
+      await userRef.update({
+        'credits.balance': FieldValue.increment(-tokensUsed),
+        'totalTokensUsed': FieldValue.increment(tokensUsed)
+      }).catch(e => console.error("Failed to update tokens", e));
     }
 
     // 2. Create or reconnect to a sandbox and write + serve the files

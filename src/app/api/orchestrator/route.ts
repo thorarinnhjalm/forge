@@ -59,7 +59,8 @@ export async function POST(request: NextRequest) {
     if (newState === 'step_intro') {
       // Gemini introduces the step in the user's language and at their level.
       // Auto-advances to awaiting_decision (or generating_code if no decision is needed).
-      aiResponse = await generateText(PROMPTS.step_intro(stepContext), undefined, MODELS.FLASH);
+      const { text: introText } = await generateText(PROMPTS.step_intro(stepContext), undefined, MODELS.FLASH);
+      aiResponse = introText;
       orchestrator.transition({ type: 'NEXT_STEP' });
     }
 
@@ -82,7 +83,7 @@ export async function POST(request: NextRequest) {
       }
 
       // Ask Gemini to generate all files for this step.
-      const codePayload = await generateJson(PROMPTS.generate_code(stepContext), undefined, MODELS.PRO);
+      const { data: codePayload } = await generateJson(PROMPTS.generate_code(stepContext), undefined, MODELS.PRO);
       orchestrator.transition({ type: 'CODE_GENERATED', payload: codePayload });
 
       // Run the generated files in the sandbox.
@@ -95,7 +96,7 @@ export async function POST(request: NextRequest) {
         orchestrator.transition({ type: 'PREVIEW_READY', payload: { url: executionResult.previewUrl! } });
 
         // Ask Gemini to explain what was just built, at the user's level.
-        const explanation = await generateJson(PROMPTS.explain(stepContext), undefined, MODELS.FLASH);
+        const { data: explanation } = await generateJson(PROMPTS.explain(stepContext), undefined, MODELS.FLASH);
         aiResponse = { ...codePayload, ...explanation };
         orchestrator.transition({ type: 'EXPLANATION_DONE' });
       } else {

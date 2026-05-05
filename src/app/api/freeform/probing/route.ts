@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateJson, MODELS } from "@/lib/gemini/client";
+import { adminAuth, adminDb } from "@/lib/firebase/firebaseAdmin";
+import { FieldValue } from "firebase-admin/firestore";
 
 const PROBING_PROMPT = (history: any[]) => `
 You are Forge AI, an educational code builder. 
@@ -34,16 +36,31 @@ Output format: Return JSON exactly matching this schema:
 
 export async function POST(request: NextRequest) {
   try {
+    const sessionCookie = request.cookies.get('session')?.value;
+    if (!sessionCookie) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    const decodedClaims = await adminAuth.verifySessionCookie(sessionCookie);
+    const uid = decodedClaims.uid;
+
     const { history } = await request.json();
 
     if (!history || !Array.isArray(history) || history.length === 0) {
       return NextResponse.json({ error: "Missing or invalid history" }, { status: 400 });
     }
 
-    const payload = await generateJson(PROBING_PROMPT(history), undefined, MODELS.FLASH);
+    const { data: payload, tokensUsed } = await generateJson(PROBING_PROMPT(history), undefined, MODELS.FLASH);
 
     if (!payload) {
       return NextResponse.json({ error: "Failed to generate probing response" }, { status: 500 });
+    }
+
+    if (tokensUsed > 0) {
+      const userRef = adminDb.collection('forge_users').doc(uid);
+      await userRef.update({
+        'credits.balance': FieldValue.increment(-tokensUsed),
+        'totalTokensUsed': FieldValue.increment(tokensUsed)
+      }).catch(e => console.error("Failed to update tokens", e));
     }
 
     return NextResponse.json({

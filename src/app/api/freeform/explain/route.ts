@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateText, MODELS } from "@/lib/gemini/client";
+import { adminAuth, adminDb } from "@/lib/firebase/firebaseAdmin";
+import { FieldValue } from "firebase-admin/firestore";
 
 const EXPLAIN_PROMPT = (history: any[], currentFiles: any[]) => `
 You are Forge AI, an educational coding assistant. 
@@ -19,13 +21,28 @@ Format the explanation nicely in Markdown.
 
 export async function POST(request: NextRequest) {
   try {
+    const sessionCookie = request.cookies.get('session')?.value;
+    if (!sessionCookie) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    const decodedClaims = await adminAuth.verifySessionCookie(sessionCookie);
+    const uid = decodedClaims.uid;
+
     const { history, currentFiles } = await request.json();
 
     if (!history || !currentFiles) {
       return NextResponse.json({ error: "Missing history or currentFiles" }, { status: 400 });
     }
 
-    const explanation = await generateText(EXPLAIN_PROMPT(history, currentFiles), undefined, MODELS.FLASH);
+    const { text: explanation, tokensUsed } = await generateText(EXPLAIN_PROMPT(history, currentFiles), undefined, MODELS.FLASH);
+
+    if (tokensUsed > 0) {
+      const userRef = adminDb.collection('forge_users').doc(uid);
+      await userRef.update({
+        'credits.balance': FieldValue.increment(-tokensUsed),
+        'totalTokensUsed': FieldValue.increment(tokensUsed)
+      }).catch(e => console.error("Failed to update tokens", e));
+    }
 
     return NextResponse.json({
       success: true,

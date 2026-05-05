@@ -28,10 +28,12 @@ export const generateJson = async (prompt: string, systemInstruction?: string, m
   });
 
   try {
-    return JSON.parse(response.text || "{}");
+    const data = JSON.parse(response.text || "{}");
+    const tokensUsed = response.usageMetadata?.totalTokenCount || 0;
+    return { data, tokensUsed };
   } catch (e) {
     console.error("Failed to parse JSON from Gemini", e);
-    return null;
+    return { data: null, tokensUsed: 0 };
   }
 };
 
@@ -46,5 +48,7 @@ export const generateText = async (prompt: string, systemInstruction?: string, m
     },
   });
 
-  return response.text || "";
+  const text = response.text || "";
+  const tokensUsed = response.usageMetadata?.totalTokenCount || 0;
+  return { text, tokensUsed };
 };
