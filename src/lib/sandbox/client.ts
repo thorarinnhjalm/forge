@@ -55,15 +55,35 @@ export class AgentSandboxClient {
         codeFiles.map((f) => ({ path: f.path, data: f.content }))
       );
 
-      // Start simple python HTTP server in background (don't await - it runs forever)
-      this.sandbox.commands.run('python3 -m http.server 3000', {
-        timeoutMs: 300_000, // 5 min max
-        onStdout: (data) => console.log(`[sandbox:${this.sessionId}]`, data),
-        onStderr: (data) => console.error(`[sandbox:${this.sessionId}]`, data),
-      }).catch(() => {}); // Fire and forget
+      // Check if it's a Node.js project
+      const hasPackageJson = codeFiles.some((f) => f.path === 'package.json');
 
-      // Give python server a moment to start
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      if (hasPackageJson) {
+        console.log(`[sandbox:${this.sessionId}] Detected package.json. Installing dependencies...`);
+        const installProcess = await this.sandbox.commands.run('npm install');
+        if (installProcess.error || installProcess.exitCode !== 0) {
+          console.error(`[sandbox:${this.sessionId}] npm install failed:`, installProcess.stderr);
+          // We will continue anyway to see if it still runs
+        }
+
+        console.log(`[sandbox:${this.sessionId}] Starting Node server...`);
+        this.sandbox.commands.run('npm start', {
+          timeoutMs: 300_000, // 5 min max
+          onStdout: (data) => console.log(`[sandbox:${this.sessionId}]`, data),
+          onStderr: (data) => console.error(`[sandbox:${this.sessionId}]`, data),
+        }).catch(() => {}); // Fire and forget
+      } else {
+        console.log(`[sandbox:${this.sessionId}] Starting static python server...`);
+        // Start simple python HTTP server in background (don't await - it runs forever)
+        this.sandbox.commands.run('python3 -m http.server 3000', {
+          timeoutMs: 300_000, // 5 min max
+          onStdout: (data) => console.log(`[sandbox:${this.sessionId}]`, data),
+          onStderr: (data) => console.error(`[sandbox:${this.sessionId}]`, data),
+        }).catch(() => {}); // Fire and forget
+      }
+
+      // Give the server a moment to start
+      await new Promise((resolve) => setTimeout(resolve, 2000));
 
       const previewUrl = `https://${this.sandbox.getHost(3000)}`;
       console.log(`[sandbox:${this.sessionId}] Preview URL: ${previewUrl}`);

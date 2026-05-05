@@ -4,6 +4,8 @@ import { AgentSandboxClient } from "@/lib/sandbox/client";
 import { adminAuth, adminDb } from "@/lib/firebase/firebaseAdmin";
 import { FieldValue } from "firebase-admin/firestore";
 
+export const maxDuration = 60;
+
 const FREEFORM_PROMPT = (description: string, history: any[]) => `
 You are Forge AI, a code generation engine. The user wants to build a web application based on this conversation:
 
@@ -13,16 +15,20 @@ ${history.map(m => `${m.role === 'user' ? 'User' : 'Forge'}: ${m.content}`).join
 Generate a COMPLETE, working web application using vanilla HTML, CSS, and JavaScript based on the user's latest request and all previously agreed-upon details in the history.
 
 CRITICAL RULES:
-- Create an index.html that is the entry point.
-- You MUST import Tailwind CSS via CDN: <script src="https://cdn.tailwindcss.com"></script>
-- Use Tailwind CSS classes for ALL styling. Only write custom CSS for specific animations if needed.
-- Import a modern font from Google Fonts (e.g., 'Inter' or 'Outfit') and apply it.
-- Include icons using FontAwesome or Heroicons via CDN if needed.
-- The app must be FULLY FUNCTIONAL and look beautiful and modern.
-- Use a sleek design with premium aesthetics (glassmorphism, subtle shadows, smooth transitions, rounded corners).
-- Make it responsive and polished for all screen sizes.
-- Do NOT use npm, React, or frameworks that require build tools.
-- Everything must work by simply opening index.html in a browser.
+- If the user explicitly asks for a backend, API, database, or full-stack application, you MUST generate a Node.js project:
+  1. Provide a "package.json" file with a "start" script (e.g. "start": "node server.js").
+  2. Provide a "server.js" file that listens on port 3000.
+  3. The server MUST serve the static frontend (e.g. index.html) on the root route ('/'). Use 'express' if it makes this easier.
+- If the user only asks for a frontend/website, do NOT include a package.json. Return only HTML/CSS/JS files without build tools.
+- For the frontend (whether fullstack or frontend-only):
+  - Create an index.html that is the entry point.
+  - You MUST import Tailwind CSS via CDN: <script src="https://cdn.tailwindcss.com"></script>
+  - Use Tailwind CSS classes for ALL styling. Only write custom CSS for specific animations if needed.
+  - Import a modern font from Google Fonts (e.g., 'Inter' or 'Outfit') and apply it.
+  - Include icons using FontAwesome or Heroicons via CDN if needed.
+  - The app must be FULLY FUNCTIONAL and look beautiful and modern.
+  - Use a sleek design with premium aesthetics (glassmorphism, subtle shadows, smooth transitions, rounded corners).
+  - Make it responsive and polished for all screen sizes.
 - NEVER ask the user to provide text copy. Generate realistic placeholder content (e.g. realistic names, descriptions, articles) yourself!
 
 Output format: Return JSON exactly matching this schema:
@@ -49,10 +55,10 @@ ${JSON.stringify(currentFiles, null, 2)}
 
 CRITICAL RULES:
 - Understand the user's request and update the necessary files.
-- Remember that the project uses Tailwind CSS via CDN. Continue using Tailwind for all new styling.
+- If the current code contains a package.json, it is a Node.js full-stack application. Maintain the backend structure and port 3000.
+- Remember that the frontend uses Tailwind CSS via CDN. Continue using Tailwind for all new styling.
 - Return the COMPLETE contents of the files you modify (and any new ones). You do not need to return files that haven't changed, but it's safe to return all files if unsure.
 - The app must remain FULLY FUNCTIONAL and maintain a premium, modern aesthetic.
-- Do NOT use any build tools, npm, React, or frameworks.
 - NEVER ask the user to provide text copy. Generate realistic placeholder content yourself!
 - The explanation must be in Icelandic and describe briefly what changed.
 
