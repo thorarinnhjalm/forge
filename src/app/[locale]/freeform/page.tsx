@@ -192,7 +192,7 @@ function FreeformContent() {
 
     // If sandboxId exists, we are iterating an existing app. Bypass probing.
     if (sandboxId) {
-      if (userPrompt.startsWith("🤔 Útskýrðu")) {
+      if (userPrompt.startsWith("Útskýrðu")) {
         await explainCode(userPrompt, updatedMessages);
       } else {
         await buildApp(userPrompt, updatedMessages);
@@ -509,7 +509,7 @@ function FreeformContent() {
                   {/* Learning Points */}
                   {msg.learningPoints && msg.learningPoints.length > 0 && (
                     <div className="learning-points">
-                      <p className="learning-label">📚 Hvað lærðirðu í þessu?</p>
+                      <p className="learning-label">Hvað lærðirðu í þessu?</p>
                       {msg.learningPoints.map((lp, i) => {
                         const key = `${idx}-${i}`;
                         const isOpen = expandedLearning[key];
@@ -539,9 +539,9 @@ function FreeformContent() {
                     <button 
                       className="select-btn"
                       style={{ marginTop: '1rem', borderStyle: 'dashed' }}
-                      onClick={() => processUserInput("🤔 Útskýrðu í smáatriðum og á mannamáli hvaða tækni þú notaðir og hvers vegna, svo ég geti lært.")}
+                      onClick={() => processUserInput("Útskýrðu í smáatriðum og á mannamáli hvaða tækni þú notaðir og hvers vegna, svo ég geti lært.")}
                     >
-                      🤔 Af hverju er þetta gert svona?
+                      Af hverju er þetta gert svona?
                     </button>
                   )}
                 </div>
@@ -602,7 +602,7 @@ function FreeformContent() {
                 className={activeView === "code" ? "active" : ""} 
                 onClick={() => setActiveView("code")}
               >
-                💻 Kóði
+                Kóði
               </button>
             </div>
             {sandboxId && currentFiles && (
@@ -674,7 +674,7 @@ function FreeformContent() {
                 </>
               ) : (
                 <div className="placeholder">
-                  <div className="placeholder-icon">💻</div>
+                  <div className="placeholder-icon">Kóði</div>
                   <p>Enginn kóði hefur verið smíðaður ennþá</p>
                 </div>
               )}

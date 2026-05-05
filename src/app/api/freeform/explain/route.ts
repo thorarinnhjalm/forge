@@ -13,15 +13,15 @@ ${history.map(m => `${m.role === 'user' ? 'User' : 'Forge'}: ${m.content}`).join
 Code:
 ${JSON.stringify(currentFiles, null, 2)}
 
-Write a SHORT, structured explanation in Icelandic. Format exactly like this (use these exact emoji headers):
+Write a SHORT, structured explanation in Icelandic. Format exactly like this:
 
-🏗️ **Uppbygging** (1–2 sentences: what are the files and what does each do)
+**Uppbygging** (1–2 sentences: what are the files and what does each do)
 
-🎨 **Útlit** (1–2 sentences: one specific CSS decision and why — quote the actual property)
+**Útlit** (1–2 sentences: one specific CSS decision and why — quote the actual property)
 
-⚡ **Virkni** (1–2 sentences: one specific JavaScript decision and why — quote the actual function or event)
+**Virkni** (1–2 sentences: one specific JavaScript decision and why — quote the actual function or event)
 
-💡 **Þú lærðir** (1 sentence: the single most important concept in this build, explained simply)
+**Þú lærðir** (1 sentence: the single most important concept in this build, explained simply)
 
 Keep every section to 1–2 sentences maximum. Avoid jargon — if you must use a technical term, define it in plain Icelandic immediately after.
 `;
