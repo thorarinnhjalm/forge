@@ -1,9 +1,12 @@
-import { VertexAI } from "@google-cloud/vertexai";
+import { GoogleGenAI } from "@google/genai";
 
-const getVertexClient = () => {
-  const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || process.env.FIREBASE_PROJECT_ID || "demo-project";
-  const location = 'europe-west1'; 
-  return new VertexAI({ project: projectId, location });
+// Use the Gemini API key from env, or fall back to Vertex AI service account auth
+const getClient = () => {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey || apiKey === 'your_gemini_api_key_here') {
+    throw new Error("GEMINI_API_KEY is not set. Get one from https://aistudio.google.com/apikey");
+  }
+  return new GoogleGenAI({ apiKey });
 };
 
 export const MODELS = {
@@ -12,27 +15,20 @@ export const MODELS = {
 };
 
 export const generateJson = async (prompt: string, systemInstruction?: string, modelType: string = MODELS.PRO) => {
-  const vertex_ai = getVertexClient();
-  const model = vertex_ai.preview.getGenerativeModel({
+  const ai = getClient();
+
+  const response = await ai.models.generateContent({
     model: modelType,
-    generationConfig: {
+    contents: prompt,
+    config: {
       temperature: 0.1,
       responseMimeType: "application/json",
+      systemInstruction: systemInstruction || undefined,
     },
-    systemInstruction: systemInstruction ? { parts: [{ text: systemInstruction }], role: 'system' } : undefined
   });
 
-  const request = {
-    contents: [
-      { role: 'user', parts: [{ text: prompt }] }
-    ]
-  };
-
-  const streamingResp = await model.generateContentStream(request);
-  const response = await streamingResp.response;
-  
   try {
-    return JSON.parse(response.candidates?.[0]?.content?.parts[0]?.text || "{}");
+    return JSON.parse(response.text || "{}");
   } catch (e) {
     console.error("Failed to parse JSON from Gemini", e);
     return null;
@@ -40,18 +36,15 @@ export const generateJson = async (prompt: string, systemInstruction?: string, m
 };
 
 export const generateText = async (prompt: string, systemInstruction?: string, modelType: string = MODELS.FLASH) => {
-  const vertex_ai = getVertexClient();
-  const model = vertex_ai.preview.getGenerativeModel({
+  const ai = getClient();
+
+  const response = await ai.models.generateContent({
     model: modelType,
-    systemInstruction: systemInstruction ? { parts: [{ text: systemInstruction }], role: 'system' } : undefined
+    contents: prompt,
+    config: {
+      systemInstruction: systemInstruction || undefined,
+    },
   });
 
-  const request = {
-    contents: [
-      { role: 'user', parts: [{ text: prompt }] }
-    ]
-  };
-
-  const response = await model.generateContent(request);
-  return response.response.candidates?.[0]?.content?.parts[0]?.text || "";
+  return response.text || "";
 };

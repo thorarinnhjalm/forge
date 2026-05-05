@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, use } from "react";
 import { useTranslations } from "next-intl";
 
 const EDUCATIONAL_TIPS = [
@@ -10,15 +10,16 @@ const EDUCATIONAL_TIPS = [
   "Gervigreindin er núna að skrifa og setja saman kóðann línur fyrir línu. Það tekur smá stund að byggja góðan grunn!"
 ];
 
-export default function SessionPage({ params }: { params: { locale: string, id: string } }) {
+export default function SessionPage({ params }: { params: Promise<{ locale: string, id: string }> }) {
+  const { id: sessionId } = use(params);
   const t = useTranslations("Session");
   
-  const [messages, setMessages] = useState<{role: 'system' | 'user', text: string}[]>([
-    { role: 'system', text: "Velkomin(n)! Við ætlum að byrja á að setja upp Búðarlistann. Það fyrsta sem við gerum er að búa til aðalsíðuna." }
-  ]);
+  const [messages, setMessages] = useState<{role: 'system' | 'user', text: string}[]>([]);
   const [input, setInput] = useState("");
-  const [isGenerating, setIsGenerating] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(true); // Start true while loading intro
   const [tipIndex, setTipIndex] = useState(0);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [currentState, setCurrentState] = useState<string>("idle");
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -30,18 +31,78 @@ export default function SessionPage({ params }: { params: { locale: string, id: 
     return () => clearInterval(interval);
   }, [isGenerating]);
 
-  const handleSend = () => {
-    if (!input.trim()) return;
+  useEffect(() => {
+    // Start the step automatically on mount
+    const initSession = async () => {
+      try {
+        const res = await fetch('/api/orchestrator', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sessionId: sessionId, event: { type: 'START_STEP' } })
+        });
+        const data = await res.json();
+        if (data.response) {
+          setMessages([{ role: 'system', text: data.response }]);
+        }
+        setCurrentState(data.state);
+        setIsGenerating(false);
+      } catch (e) {
+        console.error(e);
+        setIsGenerating(false);
+      }
+    };
+    initSession();
+  }, [sessionId]);
+
+  const handleSend = async () => {
+    if (!input.trim() || isGenerating) return;
+    
     setMessages(prev => [...prev, { role: 'user', text: input }]);
     setInput("");
     setIsGenerating(true);
     setTipIndex(0);
     
-    // Mock system response (t.d. Orchestrator API kallið)
-    setTimeout(() => {
+    try {
+      const res = await fetch('/api/orchestrator', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          sessionId: sessionId, 
+          event: { type: 'USER_DECISION', payload: input } 
+        })
+      });
+      const data = await res.json();
+      
+      // Extract the AI message from whatever format the orchestrator returns
+      let aiMessage: string | null = null;
+      if (data.response) {
+        if (typeof data.response === 'string') {
+          aiMessage = data.response;
+        } else if (data.response.explanation) {
+          aiMessage = data.response.explanation;
+        } else if (data.response.message) {
+          aiMessage = data.response.message;
+        }
+      }
+      
+      if (aiMessage) {
+        setMessages(prev => [...prev, { role: 'system', text: aiMessage! }]);
+      } else if (data.state === 'error') {
+        setMessages(prev => [...prev, { role: 'system', text: "Villa kom upp. Prófaðu aftur." }]);
+      } else {
+        setMessages(prev => [...prev, { role: 'system', text: `Skref klárað! Staða: ${data.state}` }]);
+      }
+      
+      if (data.previewUrl) {
+        setPreviewUrl(data.previewUrl);
+      }
+      setCurrentState(data.state);
+    } catch (e) {
+      console.error(e);
+      setMessages(prev => [...prev, { role: 'system', text: "Villa við að tengjast Forge AI." }]);
+    } finally {
       setIsGenerating(false);
-      setMessages(prev => [...prev, { role: 'system', text: "Gott mál! Hér er fyrsta útgáfan af listanum. Skoðaðu forsýninguna." }]);
-    }, 15000); // Hermum eftir 15 sekúndna Pro kóðasmíð
+    }
   };
 
   return (
@@ -107,11 +168,14 @@ export default function SessionPage({ params }: { params: { locale: string, id: 
               <div className="url-bar">localhost:3000</div>
             </div>
             <div className="browser-content">
-              {/* This would be an iframe pointing to Cloud Run */}
-              <div className="placeholder-preview">
-                <h2>Búðarlisti</h2>
-                <p>Hér mun appið þitt birtast fljótlega.</p>
-              </div>
+              {previewUrl ? (
+                <iframe src={previewUrl} style={{ width: '100%', height: '100%', border: 'none' }} title="Preview" />
+              ) : (
+                <div className="placeholder-preview">
+                  <h2>Búðarlisti</h2>
+                  <p>Hér mun appið þitt birtast fljótlega nad því er byggt.</p>
+                </div>
+              )}
             </div>
           </div>
           
@@ -297,11 +361,11 @@ export default function SessionPage({ params }: { params: { locale: string, id: 
         
         .chat-input-area input {
           flex: 1;
-          background: var(--color-surface-raised);
-          border: 1px solid var(--color-border);
+          background: #1a1a2e;
+          border: 1px solid #333;
           padding: var(--space-2) var(--space-3);
           border-radius: var(--radius-md);
-          color: white;
+          color: #f0f0f0;
           outline: none;
         }
         

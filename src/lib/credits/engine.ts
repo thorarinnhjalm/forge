@@ -10,7 +10,7 @@ const ACTION_COSTS: Record<CreditAction, number> = {
 
 export class CreditsEngine {
   async checkBalance(userId: string) {
-    const userDoc = await adminDb.collection('users').doc(userId).get();
+    const userDoc = await adminDb.collection('forge_users').doc(userId).get();
     if (!userDoc.exists) throw new Error("User not found");
     
     const data = userDoc.data();
@@ -26,7 +26,7 @@ export class CreditsEngine {
     const cost = ACTION_COSTS[action];
     
     // In reality, use a Firestore transaction here to prevent race conditions
-    const userRef = adminDb.collection('users').doc(userId);
+    const userRef = adminDb.collection('forge_users').doc(userId);
     const userDoc = await userRef.get();
     const currentBalance = userDoc.data()?.credits?.balance || 0;
     

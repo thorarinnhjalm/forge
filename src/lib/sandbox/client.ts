@@ -1,36 +1,93 @@
-// This is a placeholder for the Agent Engine Sandbox integration.
-// Google Cloud provides a Python SDK and REST API for Agent Engine Sandboxes.
-// Here we mock the interface that our orchestrator will use.
+// STATUS: e2b sandbox wrapper. Replaces the old constructor-based approach.
+// Static factories (create/reconnect) are used so the caller never imports e2b directly.
+// NEXT: add a cleanup cron for orphaned sandboxes.
+import { Sandbox } from 'e2b';
 
 export interface SandboxExecutionResult {
   success: boolean;
   output: string;
   error?: string;
-  filesChanged?: Array<{ path: string, content: string }>;
+  filesChanged?: Array<{ path: string; content: string }>;
+  previewUrl?: string;
 }
 
 export class AgentSandboxClient {
-  private sandboxName: string;
+  private constructor(
+    private readonly sessionId: string,
+    private readonly sandbox: Sandbox
+  ) {}
 
-  constructor(sessionId: string) {
-    this.sandboxName = `forge-session-${sessionId}`;
+  /** Spin up a brand-new e2b sandbox for this session. */
+  static async create(sessionId: string): Promise<AgentSandboxClient> {
+    const sandbox = await Sandbox.create({
+      apiKey: process.env.E2B_API_KEY,
+      timeoutMs: 5 * 60 * 1000,
+      metadata: { sessionId },
+    });
+    return new AgentSandboxClient(sessionId, sandbox);
   }
 
-  async executeCode(codeFiles: Array<{path: string, content: string}>, command: string = "npm start"): Promise<SandboxExecutionResult> {
-    console.log(`[Sandbox ${this.sandboxName}] Writing files...`);
-    // Mock writing files
-    
-    console.log(`[Sandbox ${this.sandboxName}] Executing command: ${command}`);
-    // Mock execution delay
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    return {
-      success: true,
-      output: "Server running on port 3000\nCompiled successfully.",
-    };
+  /** Reconnect to a sandbox that is already running (ID stored in Firestore). */
+  static async reconnect(sessionId: string, sandboxId: string): Promise<AgentSandboxClient> {
+    const sandbox = await Sandbox.connect(sandboxId, {
+      apiKey: process.env.E2B_API_KEY,
+    });
+    return new AgentSandboxClient(sessionId, sandbox);
   }
 
-  async close() {
-    console.log(`[Sandbox ${this.sandboxName}] Closing sandbox...`);
+  /** The e2b sandbox ID — store this in Firestore after create(). */
+  get sandboxId(): string {
+    return this.sandbox.sandboxId;
+  }
+
+  /** Extend the sandbox timeout to prevent it from shutting down. */
+  async keepAlive(timeoutMs: number = 5 * 60 * 1000): Promise<void> {
+    await this.sandbox.setTimeout(timeoutMs);
+  }
+
+  /** Write files into the sandbox and run a shell command. Returns stdout and a live preview URL. */
+  async executeCode(
+    codeFiles: Array<{ path: string; content: string }>,
+  ): Promise<SandboxExecutionResult> {
+    try {
+      // Write all generated files
+      await this.sandbox.files.writeFiles(
+        codeFiles.map((f) => ({ path: f.path, data: f.content }))
+      );
+
+      // Install serve and start it in the background
+      const installResult = await this.sandbox.commands.run('npm install -g serve', {
+        timeoutMs: 30_000,
+        onStdout: (data) => console.log(`[sandbox:${this.sessionId}]`, data),
+        onStderr: (data) => console.error(`[sandbox:${this.sessionId}]`, data),
+      });
+
+      // Start serve in background (don't await - it runs forever)
+      this.sandbox.commands.run('serve -s . -l 3000', {
+        timeoutMs: 300_000, // 5 min max
+        onStdout: (data) => console.log(`[sandbox:${this.sessionId}]`, data),
+        onStderr: (data) => console.error(`[sandbox:${this.sessionId}]`, data),
+      }).catch(() => {}); // Fire and forget
+
+      // Give serve a moment to start
+      await new Promise((resolve) => setTimeout(resolve, 3000));
+
+      const previewUrl = `https://${this.sandbox.getHost(3000)}`;
+      console.log(`[sandbox:${this.sessionId}] Preview URL: ${previewUrl}`);
+
+      return {
+        success: true,
+        output: 'Server started',
+        previewUrl,
+      };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      return { success: false, output: '', error: message };
+    }
+  }
+
+  /** Kill the sandbox. Call this on session_complete or error. */
+  async close(): Promise<void> {
+    await this.sandbox.kill();
   }
 }

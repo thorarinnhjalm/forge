@@ -1,0 +1,23 @@
+
+> forge@0.1.0 dev
+> next dev
+
+▲ Next.js 16.2.4 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.142.249:3000
+- Environments: .env.local
+✓ Ready in 242ms
+⚠ Warning: Next.js inferred your workspace root, but it may not be correct.
+ We detected multiple lockfiles and selected the directory of /Users/thorarinnhjalmarsson/package-lock.json as the root directory.
+ To silence this warning, set `turbopack.root` in your Next.js config, or consider removing one of the lockfiles if it's not needed.
+   See https://nextjs.org/docs/app/api-reference/config/next-config-js/turbopack#root-directory for more information.
+ Detected additional lockfiles: 
+   * /Users/thorarinnhjalmarsson/Documents/Antigravity/forge/package-lock.json
+
+
+ HEAD /is 200 in 457ms (next.js: 271ms, proxy.ts: 73ms, generate-params: 223ms, application-code: 114ms)
+ GET /is 200 in 37ms (next.js: 5ms, proxy.ts: 3ms, generate-params: 1257µs, application-code: 29ms)
+ GET /is 200 in 32ms (next.js: 5ms, proxy.ts: 3ms, generate-params: 1552µs, application-code: 24ms)
+ GET /en 200 in 29ms (next.js: 3ms, proxy.ts: 2ms, generate-params: 1079µs, application-code: 24ms)
+ GET /is 200 in 34ms (next.js: 4ms, proxy.ts: 4ms, generate-params: 1471µs, application-code: 26ms)
+ GET /is 200 in 25ms (next.js: 3ms, proxy.ts: 1592µs, generate-params: 869µs, application-code: 20ms)

@@ -2,9 +2,11 @@
 
 import { useTranslations } from "next-intl";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export default function DashboardPage() {
   const t = useTranslations("Dashboard");
+  const router = useRouter();
 
   // Mock data
   const projects = [
@@ -33,7 +35,22 @@ export default function DashboardPage() {
       <main className="dashboard-content">
         <header className="dash-header">
           <h1>{t("welcome")}</h1>
-          <button className="cta-button">{t("newProject")}</button>
+          <button 
+            className="cta-button"
+            onClick={async () => {
+              const res = await fetch('/api/sessions', { 
+                method: 'POST', 
+                body: JSON.stringify({ projectId: 'shopping-list', userId: 'test-user-123' }),
+                headers: { 'Content-Type': 'application/json' }
+              });
+              const data = await res.json();
+              if (data.sessionId) {
+                router.push(`/en/session/${data.sessionId}`);
+              }
+            }}
+          >
+            Byrja Búðarlista (Test)
+          </button>
         </header>
 
         <section className="projects-grid">

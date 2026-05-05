@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import Logo from "@/components/shared/Logo";
@@ -11,6 +12,10 @@ interface LandingHeroProps {
 }
 
 export default function LandingHero({ title, description, ctaText }: LandingHeroProps) {
+  const [isWaitlistModalOpen, setIsWaitlistModalOpen] = useState(false);
+  const [waitlistEmail, setWaitlistEmail] = useState("");
+  const [waitlistStatus, setWaitlistStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+  
   const router = useRouter();
   const params = useParams();
   const locale = params?.locale || "is";
@@ -19,15 +24,71 @@ export default function LandingHero({ title, description, ctaText }: LandingHero
   const tPrice = useTranslations("Pricing");
   const tFaq = useTranslations("FAQ");
 
+  const handleWaitlistSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!waitlistEmail) return;
+    
+    setWaitlistStatus("loading");
+    try {
+      const res = await fetch("/api/waitlist", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: waitlistEmail }),
+      });
+      
+      if (res.ok) {
+        setWaitlistStatus("success");
+      } else {
+        setWaitlistStatus("error");
+      }
+    } catch (err) {
+      setWaitlistStatus("error");
+    }
+  };
+
   return (
     <div className="landing-container">
+      {isWaitlistModalOpen && (
+        <div className="modal-overlay" onClick={() => setIsWaitlistModalOpen(false)}>
+          <div className="card modal-content" onClick={(e) => e.stopPropagation()}>
+            <button className="close-btn" onClick={() => setIsWaitlistModalOpen(false)}>×</button>
+            <h2>{locale === 'is' ? 'Skráðu þig á biðlistann' : 'Join the waitlist'}</h2>
+            <p>{locale === 'is' ? 'Fáðu aðgang um leið og Forge fer í loftið.' : 'Get access as soon as Forge launches.'}</p>
+            
+            {waitlistStatus === "success" ? (
+              <div className="success-msg">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--color-success)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                <h3>{locale === 'is' ? 'Takk fyrir skráninguna!' : 'Thanks for joining!'}</h3>
+                <button className="cta-button outline-btn" onClick={() => setIsWaitlistModalOpen(false)} style={{marginTop: '1rem', width: '100%'}}>Loka</button>
+              </div>
+            ) : (
+              <form onSubmit={handleWaitlistSubmit} className="waitlist-form">
+                <input 
+                  type="email" 
+                  placeholder={locale === 'is' ? 'Netfangið þitt' : 'Your email address'} 
+                  value={waitlistEmail}
+                  onChange={(e) => setWaitlistEmail(e.target.value)}
+                  required 
+                  className="email-input"
+                />
+                {waitlistStatus === "error" && (
+                  <p className="error-msg">{locale === 'is' ? 'Eitthvað fór úrskeiðis. Reyndu aftur.' : 'Something went wrong. Please try again.'}</p>
+                )}
+                <button type="submit" className="cta-button" disabled={waitlistStatus === "loading"}>
+                  {waitlistStatus === "loading" ? "..." : (locale === 'is' ? 'Skrá mig' : 'Join Now')}
+                </button>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
       <div className="hero animate-slide-up">
         <h1>{title}</h1>
         <p>{description}</p>
         <div className="hero-actions">
           <button 
             className="cta-button" 
-            onClick={() => alert(locale === 'is' ? 'Biðlisti opnar á næstu dögum. Fylgstu með!' : 'Waitlist opens in a few days. Stay tuned!')}
+            onClick={() => setIsWaitlistModalOpen(true)}
           >
             {ctaText}
           </button>
@@ -94,7 +155,7 @@ export default function LandingHero({ title, description, ctaText }: LandingHero
               <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> {tPrice("free_feature2")}</li>
               <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> {tPrice("free_feature3")}</li>
             </ul>
-            <button className="cta-button outline-btn" onClick={() => alert(locale === 'is' ? 'Biðlisti opnar á næstu dögum. Fylgstu með!' : 'Waitlist opens in a few days. Stay tuned!')}>
+            <button className="cta-button outline-btn" onClick={() => setIsWaitlistModalOpen(true)}>
               {tPrice("free_cta")}
             </button>
           </div>
@@ -110,7 +171,7 @@ export default function LandingHero({ title, description, ctaText }: LandingHero
               <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> {tPrice("pro_feature2")}</li>
               <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> {tPrice("pro_feature3")}</li>
             </ul>
-            <button className="cta-button" onClick={() => alert(locale === 'is' ? 'Biðlisti opnar á næstu dögum. Fylgstu með!' : 'Waitlist opens in a few days. Stay tuned!')}>
+            <button className="cta-button" onClick={() => setIsWaitlistModalOpen(true)}>
               {tPrice("pro_cta")}
             </button>
           </div>
@@ -157,7 +218,7 @@ export default function LandingHero({ title, description, ctaText }: LandingHero
             <a href="#features">Eiginleikar</a>
             <a href="#pricing">Verðskrá</a>
             <a href="#faq">Spurningar</a>
-            <a href="#" onClick={(e) => { e.preventDefault(); alert(locale === 'is' ? 'Biðlisti opnar á næstu dögum. Fylgstu með!' : 'Waitlist opens in a few days. Stay tuned!'); }}>{ctaText}</a>
+            <a href="#" onClick={(e) => { e.preventDefault(); setIsWaitlistModalOpen(true); }}>{ctaText}</a>
           </div>
         </div>
         <div className="footer-bottom">
@@ -454,6 +515,68 @@ export default function LandingHero({ title, description, ctaText }: LandingHero
           .pricing-cards {
             flex-direction: column;
           }
+        }
+        
+        .modal-overlay {
+          position: fixed;
+          top: 0; left: 0; right: 0; bottom: 0;
+          background: rgba(0, 0, 0, 0.6);
+          backdrop-filter: blur(4px);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 1000;
+          animation: fadeIn 0.2s ease forwards;
+        }
+        .modal-content {
+          position: relative;
+          width: 90%;
+          max-width: 400px;
+          text-align: center;
+          animation: slideUp 0.3s ease forwards;
+        }
+        .close-btn {
+          position: absolute;
+          top: 1rem;
+          right: 1rem;
+          background: none;
+          border: none;
+          font-size: 1.5rem;
+          color: var(--color-text-secondary);
+        }
+        .close-btn:hover {
+          color: var(--color-text-primary);
+        }
+        .waitlist-form {
+          display: flex;
+          flex-direction: column;
+          gap: 1rem;
+          margin-top: 1.5rem;
+        }
+        .email-input {
+          padding: 12px 16px;
+          border-radius: var(--radius-md);
+          border: 1px solid var(--color-border);
+          background: var(--color-bg);
+          color: var(--color-text-primary);
+          font-size: 1rem;
+        }
+        .email-input:focus {
+          outline: none;
+          border-color: var(--color-accent);
+          box-shadow: 0 0 0 2px rgba(var(--color-accent-rgb), 0.2);
+        }
+        .success-msg {
+          margin-top: 1.5rem;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 1rem;
+        }
+        .error-msg {
+          color: var(--color-danger);
+          font-size: 0.85rem;
+          text-align: left;
         }
       `}</style>
     </div>

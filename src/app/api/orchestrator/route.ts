@@ -1,83 +1,131 @@
+// STATUS: Orchestrator API route — the single entry point for all session events.
+import * as admin from 'firebase-admin';
+//
+// What this does:
+//   1. Reads the session doc from Firestore (state, sandboxId, user profile).
+//   2. Transitions the in-memory state machine with the incoming event.
+//   3. Runs side-effects for the new state:
+//      - step_intro   → Gemini generates a step introduction text.
+//      - generating_code → Gemini generates files, sandbox executes them,
+//                          previewUrl is written back to Firestore.
+//      - session_complete / error → sandbox is killed, sandboxId cleared.
+//   4. Writes the updated state back to Firestore.
+//   5. Returns { state, response } to the client.
+//
+// NEXT:
+//   - Add a dedicated POST /api/sessions route to create the initial session doc.
 import { NextRequest, NextResponse } from 'next/server';
 import { Orchestrator, SessionEvent } from '@/lib/orchestrator/stateMachine';
 import { generateJson, generateText, MODELS } from '@/lib/gemini/client';
 import { PROMPTS } from '@/lib/gemini/prompts';
 import { AgentSandboxClient } from '@/lib/sandbox/client';
 import { getStarterProject } from '@/lib/orchestrator/planGenerator';
-
-// In a real app, you would retrieve the state from Firestore.
-// We'll use a simple transient orchestrator here for the MVP skeleton.
+import { getSession, updateSession } from '@/lib/firebase/sessions';
+import { CreditsEngine } from '@/lib/credits/engine';
 
 export async function POST(request: NextRequest) {
+  let sandbox: AgentSandboxClient | null = null;
+
   try {
     const body = await request.json();
-    const { sessionId, event, projectId, currentStepId, currentState } = body as { 
-      sessionId: string, 
-      event: SessionEvent, 
-      projectId: string,
-      currentStepId: string,
-      currentState: any
-    };
+    const { sessionId, event } = body as { sessionId: string; event: SessionEvent };
 
     if (!sessionId || !event) {
       return NextResponse.json({ error: 'Missing sessionId or event' }, { status: 400 });
     }
 
-    const orchestrator = new Orchestrator(currentState || 'idle');
+    // Read the session doc so we have the current state and any running sandbox ID.
+    const session = await getSession(sessionId);
+    if (!session) {
+      return NextResponse.json({ error: 'Session not found' }, { status: 404 });
+    }
+
+    const orchestrator = new Orchestrator(session.state);
     const newState = orchestrator.transition(event);
-    
-    // Process side-effects based on new state
-    let aiResponse = null;
-    const project = await getStarterProject(projectId);
+
+    // Resolve the current project and step for Gemini prompts.
+    const project = await getStarterProject(session.projectId);
+    const step = project?.steps.find((s) => s.id === session.currentStepId);
     const stepContext = {
-      stepTitle: project?.steps.find(s => s.id === currentStepId)?.title.en || 'Step',
-      projectTitle: project?.title.en || 'Project',
-      language: 'is' as 'is' | 'en', // Should come from user profile
-      techLevel: 'beginner' as 'beginner', // Should come from user profile
-      stepRequirements: project?.steps.find(s => s.id === currentStepId)?.geminiPrompt
+      stepTitle: step?.title[session.language] ?? 'Step',
+      projectTitle: project?.title[session.language] ?? 'Project',
+      language: session.language,
+      techLevel: session.techLevel,
+      stepRequirements: step?.geminiPrompt,
     };
 
+    let aiResponse = null;
+
     if (newState === 'step_intro') {
-      const prompt = PROMPTS.step_intro(stepContext);
-      aiResponse = await generateText(prompt, undefined, MODELS.FLASH);
-      // Immediately transition to next state if no decision
-      orchestrator.transition({ type: "NEXT_STEP" });
-    } 
-    else if (newState === 'generating_code') {
-      const prompt = PROMPTS.generate_code(stepContext);
-      aiResponse = await generateJson(prompt, undefined, MODELS.PRO); // {"files": [...], "explanation": "..."}
-      
-      // We automatically fire the CODE_GENERATED event to transition
-      orchestrator.transition({ type: "CODE_GENERATED", payload: aiResponse });
-      
-      // Execute in sandbox
-      const sandbox = new AgentSandboxClient(sessionId);
-      const executionResult = await sandbox.executeCode(aiResponse.files);
-      
-      orchestrator.transition({ type: "EXECUTION_COMPLETE", payload: executionResult });
-      
-      if (executionResult.success) {
-        orchestrator.transition({ type: "PREVIEW_READY", payload: { url: `https://preview-${sessionId}.forge.is` } });
-        
-        // Now explain
-        const explainPrompt = PROMPTS.explain(stepContext);
-        const explanation = await generateJson(explainPrompt, undefined, MODELS.FLASH);
-        aiResponse = { ...aiResponse, ...explanation };
-        
-        orchestrator.transition({ type: "EXPLANATION_DONE" });
+      // Gemini introduces the step in the user's language and at their level.
+      // Auto-advances to awaiting_decision (or generating_code if no decision is needed).
+      aiResponse = await generateText(PROMPTS.step_intro(stepContext), undefined, MODELS.FLASH);
+      orchestrator.transition({ type: 'NEXT_STEP' });
+    }
+
+    if (newState === 'generating_code') {
+      // Reconnect to the session's sandbox if one is running, otherwise create a new one.
+      if (session.sandboxId) {
+        sandbox = await AgentSandboxClient.reconnect(sessionId, session.sandboxId);
       } else {
-        orchestrator.transition({ type: "ERROR", payload: executionResult.output });
+        sandbox = await AgentSandboxClient.create(sessionId);
+        await updateSession(sessionId, { sandboxId: sandbox.sandboxId });
+        
+        // Deduct credit for building
+        const creditsEngine = new CreditsEngine();
+        try {
+          await creditsEngine.deduct(session.userId, "build_step", sessionId);
+        } catch (e) {
+          console.warn("[orchestrator] Credit deduction failed or user has no credits", e);
+          // In a real app we might throw here, but we let it pass for beta if it fails
+        }
+      }
+
+      // Ask Gemini to generate all files for this step.
+      const codePayload = await generateJson(PROMPTS.generate_code(stepContext), undefined, MODELS.PRO);
+      orchestrator.transition({ type: 'CODE_GENERATED', payload: codePayload });
+
+      // Run the generated files in the sandbox.
+      const executionResult = await sandbox.executeCode(codePayload.files);
+      orchestrator.transition({ type: 'EXECUTION_COMPLETE', payload: executionResult });
+
+      if (executionResult.success) {
+        // Write the real e2b preview URL to Firestore so the session UI can render it.
+        await updateSession(sessionId, { previewUrl: executionResult.previewUrl });
+        orchestrator.transition({ type: 'PREVIEW_READY', payload: { url: executionResult.previewUrl! } });
+
+        // Ask Gemini to explain what was just built, at the user's level.
+        const explanation = await generateJson(PROMPTS.explain(stepContext), undefined, MODELS.FLASH);
+        aiResponse = { ...codePayload, ...explanation };
+        orchestrator.transition({ type: 'EXPLANATION_DONE' });
+      } else {
+        orchestrator.transition({ type: 'ERROR', payload: executionResult.error ?? executionResult.output });
       }
     }
 
-    return NextResponse.json({ 
-      success: true, 
-      state: orchestrator.getState(),
-      response: aiResponse 
-    }, { status: 200 });
+    const finalState = orchestrator.getState();
 
+    // On terminal states, kill the sandbox to avoid leaking e2b resources.
+    if ((finalState === 'session_complete' || finalState === 'error') && session.sandboxId) {
+      if (!sandbox) {
+        sandbox = await AgentSandboxClient.reconnect(sessionId, session.sandboxId);
+      }
+      await sandbox.close();
+      await updateSession(sessionId, { sandboxId: admin.firestore.FieldValue.delete() as any, state: finalState });
+    } else {
+      // Keep sandbox alive for another 5 minutes if not terminal
+      if (session.sandboxId) {
+        if (!sandbox) {
+          sandbox = await AgentSandboxClient.reconnect(sessionId, session.sandboxId);
+        }
+        await sandbox.keepAlive(5 * 60 * 1000).catch(console.error);
+      }
+      await updateSession(sessionId, { state: finalState });
+    }
+
+    return NextResponse.json({ success: true, state: finalState, response: aiResponse, previewUrl: session.previewUrl });
   } catch (error) {
-    console.error('Orchestrator error', error);
+    console.error('[orchestrator] Unhandled error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

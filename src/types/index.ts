@@ -1,3 +1,8 @@
+// STATUS: shared domain types for Forge. SessionDoc added for Firestore session persistence.
+// NEXT: add ProjectSession type once session creation flow is built.
+
+import type { SessionState } from '@/lib/orchestrator/stateMachine';
+
 export type TechLevel = "beginner" | "intermediate" | "comfortable";
 
 export type UserPlan = "free" | "pro";
@@ -41,4 +46,17 @@ export interface ProjectStep {
   geminiPrompt: string;
   expectedFiles: string[];
   validationCriteria: string;
+}
+
+export interface SessionDoc {
+  state: SessionState;
+  projectId: string;
+  currentStepId: string;
+  userId: string;
+  language: "is" | "en";
+  techLevel: TechLevel;
+  // Set when a sandbox is created; cleared on session_complete or error.
+  sandboxId?: string;
+  // Set after executeCode succeeds; used by the session UI to render the preview iframe.
+  previewUrl?: string;
 }

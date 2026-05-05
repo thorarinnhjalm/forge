@@ -34,10 +34,18 @@ export const PROMPTS = {
     Generate the code for step "${context.stepTitle}".
     
     Current project state:
-    ${context.currentCode || "Initial state"}
+    ${context.currentCode || "Initial state — no files exist yet."}
     
     Requirements for this step:
     ${context.stepRequirements}
+    
+    CRITICAL RULES:
+    - You MUST include a package.json file with all needed dependencies.
+    - You MUST include an index.html as the entry point.
+    - Use vanilla HTML/CSS/JS OR a simple setup (e.g. React via CDN in index.html).
+    - Do NOT use build tools like webpack, vite, or create-react-app.
+    - The app must work by simply opening index.html in a browser or serving the directory.
+    - All file paths must be relative to the project root (e.g. "index.html", "style.css", "app.js").
     
     Output format: Return JSON exactly matching this schema:
     {
