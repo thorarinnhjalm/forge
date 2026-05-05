@@ -18,6 +18,22 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden: Admins only' }, { status: 403 });
     }
 
+    // Auto-sync missing users frá Firebase Auth
+    const listUsersResult = await adminAuth.listUsers(1000);
+    for (const authUser of listUsersResult.users) {
+      const userRef = adminDb.collection('forge_users').doc(authUser.uid);
+      const docSnap = await userRef.get();
+      if (!docSnap.exists) {
+        await userRef.set({
+          uid: authUser.uid,
+          email: authUser.email || '',
+          name: authUser.displayName || '',
+          createdAt: new Date(),
+          credits: { balance: 500 }
+        });
+      }
+    }
+
     // Sækja alla notendur
     const usersSnapshot = await adminDb.collection('forge_users').get();
     const users: any[] = [];
