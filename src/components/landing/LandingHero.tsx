@@ -155,7 +155,7 @@ export default function LandingHero({ title, description, ctaText }: LandingHero
               <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> {tPrice("free_feature2")}</li>
               <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> {tPrice("free_feature3")}</li>
             </ul>
-            <button className="cta-button outline-btn" onClick={() => setIsWaitlistModalOpen(true)}>
+            <button className="cta-button outline-btn" onClick={() => router.push(`/${locale}/freeform`)}>
               {tPrice("free_cta")}
             </button>
           </div>
@@ -171,7 +171,7 @@ export default function LandingHero({ title, description, ctaText }: LandingHero
               <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> {tPrice("pro_feature2")}</li>
               <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> {tPrice("pro_feature3")}</li>
             </ul>
-            <button className="cta-button" onClick={() => setIsWaitlistModalOpen(true)}>
+            <button className="cta-button" onClick={() => router.push(`/${locale}/freeform`)}>
               {tPrice("pro_cta")}
             </button>
           </div>
@@ -218,7 +218,7 @@ export default function LandingHero({ title, description, ctaText }: LandingHero
             <a href="#features">Eiginleikar</a>
             <a href="#pricing">Verðskrá</a>
             <a href="#faq">Spurningar</a>
-            <a href="#" onClick={(e) => { e.preventDefault(); setIsWaitlistModalOpen(true); }}>{ctaText}</a>
+            <a href="#" onClick={(e) => { e.preventDefault(); router.push(`/${locale}/freeform`); }}>{ctaText}</a>
           </div>
         </div>
         <div className="footer-bottom">

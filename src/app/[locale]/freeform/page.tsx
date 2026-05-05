@@ -5,7 +5,7 @@ import { setupAuthListener } from "@/lib/firebase/auth";
 import { User, GithubAuthProvider, signInWithPopup, linkWithPopup } from "firebase/auth";
 import { doc, setDoc, serverTimestamp, getDoc } from "firebase/firestore";
 import { db, auth } from "@/lib/firebase/firebaseConfig";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 
 const TIPS = [
   "Gervigreindin er að skrifa HTML, CSS og JavaScript kóðann...",
@@ -57,7 +57,9 @@ function FreeformContent() {
   const [tipIndex, setTipIndex] = useState(0);
 
   const [user, setUser] = useState<User | null>(null);
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [sessionId, setSessionId] = useState<string>("");
+  const router = useRouter();
 
   // Github Export State
   const [showGithubModal, setShowGithubModal] = useState(false);
@@ -95,9 +97,27 @@ function FreeformContent() {
       setSessionId(Date.now().toString(36) + Math.random().toString(36).substring(2));
     }
 
-    const unsubscribe = setupAuthListener((u) => setUser(u));
+    const unsubscribe = setupAuthListener((u) => {
+      setUser(u);
+      setIsAuthLoading(false);
+      if (!u) {
+        // Ef notandi er ekki innskráður, skutla honum á login
+        router.push("/is/login");
+      }
+    });
     return () => unsubscribe();
-  }, [sessionParam]);
+  }, [sessionParam, router]);
+
+  if (isAuthLoading) {
+    return (
+      <div className="freeform-layout" style={{ justifyContent: 'center', alignItems: 'center' }}>
+        <div className="spinner" />
+      </div>
+    );
+  }
+
+  // Ef user er null, þá er redirectið í gangi
+  if (!user) return null;
 
   useEffect(() => {
     if (!user || !sessionId || messages.length === 0) return;
