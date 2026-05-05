@@ -732,11 +732,17 @@ function FreeformContent() {
           color: white;
           border-bottom-right-radius: 2px;
         }
+        .chat-message.user .message-content p {
+          color: white;
+        }
         .chat-message.forge .message-content {
           background: #1a1a2e;
           color: #e0e0e0;
           border: 1px solid #333;
           border-bottom-left-radius: 2px;
+        }
+        .chat-message.forge .message-content p {
+          color: #e0e0e0;
         }
 
         .options-grid {
